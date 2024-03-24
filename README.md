@@ -2,6 +2,8 @@
 
 ## Table of contents
 
+![TOC](https://github.com/hubertrybka/profis/blob/main/TOC.png)
+
 * [General info](#general-info)
 * [Setup](#setup)
 * [Usage](#usage)
