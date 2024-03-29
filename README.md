@@ -1,4 +1,5 @@
 # PROFIS: Design of target-focused libraries by probing continuous fingerprint space with recurrent neural networks
+Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
 ## Table of contents
 
