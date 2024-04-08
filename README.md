@@ -3,13 +3,14 @@ Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
 ## Table of contents
 
-<center>
+<p align="center">
    <img src="https://github.com/hubertrybka/profis/blob/main/figures/TOC.png" width="410">
-   
+</p>
+
    * [General info](#general-info)
    * [Setup](#setup)
    * [Usage](#usage)
-</center>
+
 
 ## General info
 
@@ -20,7 +21,9 @@ potential novel ligands, PROFIS employs a Bayesian search algorithm to explore t
 and identify subspaces that correspond to the known binders. Because many FPs do not determine the full chemical structure, 
 our method can generate a diverse set of molecules that match the FP description.
 
-<img src="https://github.com/hubertrybka/profis/blob/main/figures/architecture.png" width="820">
+<p align="center">
+   <img src="https://github.com/hubertrybka/profis/blob/main/figures/architecture.png" width="600">
+</p>
 
 ## Setup
 
