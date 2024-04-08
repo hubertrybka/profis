@@ -3,7 +3,7 @@ Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
 ## Table of contents
 
-![TOC](https://github.com/hubertrybka/profis/blob/main/TOC.png)
+![TOC](https://github.com/hubertrybka/profis/blob/main/figures/TOC.pdf)
 
 * [General info](#general-info)
 * [Setup](#setup)
@@ -17,6 +17,8 @@ in a sequential notation so that the resulting compounds match the initial FP de
 potential novel ligands, PROFIS employs a Bayesian search algorithm to explore the space of embedded molecular fingerprints 
 and identify subspaces that correspond to the known binders. Because many FPs do not determine the full chemical structure, 
 our method can generate a diverse set of molecules that match the FP description.
+
+![arch](https://github.com/hubertrybka/profis/blob/main/figures/architecture.pdf)
 
 ## Setup
 
