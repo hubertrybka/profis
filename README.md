@@ -21,10 +21,6 @@ potential novel ligands, PROFIS employs a Bayesian search algorithm to explore t
 and identify subspaces that correspond to the known binders. Because many FPs do not determine the full chemical structure, 
 our method can generate a diverse set of molecules that match the FP description.
 
-<p align="center">
-   <img src="https://github.com/hubertrybka/profis/blob/main/figures/architecture.png" width="600">
-</p>
-
 ## Setup
 
 1. Install [miniconda](https://docs.conda.io/en/latest/miniconda.html) following the instructions for your operating
