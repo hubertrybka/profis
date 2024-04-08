@@ -3,11 +3,13 @@ Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
 ## Table of contents
 
-<img src="https://github.com/hubertrybka/profis/blob/main/figures/TOC.png" width="410">
-
-* [General info](#general-info)
-* [Setup](#setup)
-* [Usage](#usage)
+<center>
+   <img src="https://github.com/hubertrybka/profis/blob/main/figures/TOC.png" width="410">
+   
+   * [General info](#general-info)
+   * [Setup](#setup)
+   * [Usage](#usage)
+</center>
 
 ## General info
 
