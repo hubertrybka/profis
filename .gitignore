@@ -1,0 +1,6 @@
+
+data/d2_ECFP_100nM.parquet
+data/d2_KRFP_100nM.parquet
+data/datasets.zip
+data/RNN_dataset_ECFP.parquet
+data/RNN_dataset_KRFP.parquet
