@@ -29,3 +29,7 @@ models/SVC_SMILES_ECFP/clf.pkl
 models/SVC_SMILES_ECFP/metrics.csv
 models/SVC_SMILES_KRFP/clf.pkl
 models/SVC_SMILES_KRFP/metrics.csv
+*.pyc
+.idea/inspectionProfiles/Project_Default.xml
+.idea/misc.xml
+.idea/workspace.xml
