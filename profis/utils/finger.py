@@ -5,7 +5,7 @@ import torch.utils.data as Data
 from rdkit import Chem
 from tqdm import tqdm
 
-from profis.gen.dataset import VAEDataset
+from profis.gen.dataset import LatentEncoderDataset
 
 
 def smiles2sparse(smiles):
@@ -67,7 +67,7 @@ def dense2sparse(dense, fp_len=4860):
     return np.array(sparse)
 
 
-def encode(df, model, device):
+def encode(df, model, device, batch=1024):
     """
     Encodes the fingerprints of the molecules in the dataframe using VAE encoder.
     Args:
@@ -75,12 +75,13 @@ def encode(df, model, device):
             in the form of a list of integers (dense representation)
         model (EncoderDecoderV3): model to be used for encoding
         device (torch.device): device to be used for encoding
+        batch (int): batch size for encoding
     Returns:
         mus (np.ndarray): array of means of the latent space
         logvars (np.ndarray): array of logvars of the latent space
     """
-    dataset = VAEDataset(df, fp_len=model.fp_size)
-    dataloader = Data.DataLoader(dataset, batch_size=1024, shuffle=False)
+    dataset = LatentEncoderDataset(df, fp_len=model.fp_size)
+    dataloader = Data.DataLoader(dataset, batch_size=batch, shuffle=False)
     mus = []
     logvars = []
     model.eval()

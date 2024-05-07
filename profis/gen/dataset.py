@@ -21,7 +21,6 @@ class SELFIESDataset(Dataset):
         self.fps = df["fps"]
         self.fps = self.prepare_X(self.fps)
         self.smiles = self.prepare_y(self.smiles)
-        self.alphabet = vectorizer.read_alphabet(path="data/alphabet.txt")
         self.vectorizer = vectorizer
         self.fp_len = fp_len
         self.smiles_enum = smiles_enum
@@ -49,7 +48,7 @@ class SELFIESDataset(Dataset):
                 tokens = self.vectorizer.split_selfi(raw_selfie)
                 all_good = True
                 for token in tokens:
-                    if token not in self.alphabet:
+                    if token not in self.vectorizer.alphabet:
                         all_good = False
                 if all_good:
                     successful = True
@@ -134,7 +133,7 @@ class SMILESDataset(Dataset):
         raw_smile = self.smiles[idx]
         vectorized_smile = self.vectorizer.vectorize(raw_smile)
         if len(vectorized_smile) > 128:
-            vectorized_selfie = vectorized_smile[:128]
+            vectorized_smile = vectorized_smile[:128]
         raw_X = self.fps[idx]
         X = np.array(raw_X, dtype=int)
         X_reconstructed = self.reconstruct_fp(X)
@@ -171,9 +170,9 @@ class SMILESDataset(Dataset):
         return selfies.values
 
 
-class VAEDataset(Dataset):
+class LatentEncoderDataset(Dataset):
     """
-    Dataset for variational autoencoder
+    Dataset for encoding fingerprints into latent space.
     Args:
         df (pd.DataFrame): pandas DataFrame object containing 'fps' column, which contains fingerprints
         in the form of lists of integers (dense representation)

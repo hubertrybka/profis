@@ -8,9 +8,9 @@ import torch
 from torch.utils.data import DataLoader
 
 from profis.gen.dataset import SELFIESDataset, SMILESDataset
-from profis.gen.generator import EncoderDecoderV3
 from profis.gen.train import train
 from profis.utils.split import scaffold_split
+from profis.utils.modelinit import initialize_model
 from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer
 
 
@@ -28,19 +28,8 @@ def main(config_path):
     run_name = str(config["RUN"]["run_name"])
     batch_size = int(config["RUN"]["batch_size"])
     data_path = str(config["RUN"]["data_path"])
-    NUM_WORKERS = int(config["RUN"]["num_workers"])
-    encoding_size = int(config["MODEL"]["encoding_size"])
-    hidden_size = int(config["MODEL"]["hidden_size"])
-    num_layers = int(config["MODEL"]["num_layers"])
-    dropout = float(config["MODEL"]["dropout"])
-    teacher_ratio = float(config["MODEL"]["teacher_ratio"])
+    dataloader_workers = int(config["RUN"]["num_workers"])
     fp_len = int(config["MODEL"]["fp_len"])
-    fc1_size = int(config["MODEL"]["fc1_size"])
-    fc2_size = int(config["MODEL"]["fc2_size"])
-    fc3_size = int(config["MODEL"]["fc3_size"])
-    encoder_activation = str(config["MODEL"]["encoder_activation"])
-    fc2_enabled = config.getboolean("MODEL", "fc2_enabled")
-    fc3_enabled = config.getboolean("MODEL", "fc3_enabled")
     use_cuda = config.getboolean("RUN", "use_cuda")
     use_selfies = config.getboolean("RUN", "use_selfies")
 
@@ -117,40 +106,26 @@ def main(config_path):
         shuffle=True,
         batch_size=batch_size,
         drop_last=True,
-        num_workers=NUM_WORKERS,
+        num_workers=dataloader_workers,
     )
     val_loader = DataLoader(
         val_dataset,
         shuffle=False,
         batch_size=val_batch_size,
         drop_last=True,
-        num_workers=NUM_WORKERS,
+        num_workers=dataloader_workers,
     )
     scoring_loader = DataLoader(
         scoring_dataset,
         shuffle=False,
         batch_size=scoring_batch_size,
         drop_last=True,
-        num_workers=NUM_WORKERS,
+        num_workers=dataloader_workers,
     )
 
     # Init model
 
-    model = EncoderDecoderV3(
-        fp_size=fp_len,
-        encoding_size=encoding_size,
-        hidden_size=hidden_size,
-        num_layers=num_layers,
-        dropout=dropout,
-        teacher_ratio=teacher_ratio,
-        output_size=31 if use_selfies else 32,  # alphabet length
-        fc1_size=fc1_size,
-        fc2_size=fc2_size,
-        fc3_size=fc3_size,
-        encoder_activation=encoder_activation,
-        fc2_enabled=fc2_enabled,
-        fc3_enabled=fc3_enabled,
-    ).to(device)
+    model = initialize_model(config_path, device=device, use_dropout=True, teacher_forcing=True)
 
     _ = train(config, model, train_loader, val_loader, scoring_loader, use_wandb=True)
     return None

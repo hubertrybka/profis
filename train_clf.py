@@ -12,7 +12,7 @@ import torch.utils.data as D
 from sklearn.metrics import roc_auc_score, confusion_matrix
 from sklearn.svm import SVC
 
-from profis.gen.dataset import VAEDataset
+from profis.gen.dataset import LatentEncoderDataset
 from profis.gen.generator import EncoderDecoderV3
 from profis.utils.modelinit import initialize_model
 
@@ -130,7 +130,7 @@ def encode(df, model, device):
         mus (np.ndarray): array of means of the latent space
         logvars (np.ndarray): array of logvars of the latent space
     """
-    dataset = VAEDataset(df, fp_len=model.fp_size)
+    dataset = LatentEncoderDataset(df, fp_len=model.fp_size)
     dataloader = D.DataLoader(dataset, batch_size=1024, shuffle=False)
     mus = []
     logvars = []
