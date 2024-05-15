@@ -28,6 +28,7 @@ def main(config_path):
     config.read(config_path)
     data_path = str(config["SVC"]["data_path"])
     model_path = str(config["SVC"]["model_path"])
+    out_path = str(config["SVC"]["output_dir"])
     c_param = float(config["SVC"]["c_param"])
     kernel = str(config["SVC"]["kernel"])
     gamma = str(config["SVC"]["gamma"])
@@ -97,9 +98,12 @@ def main(config_path):
 
     # save model
 
-    if not os.path.exists(f"models/{clf_name}"):
-        os.mkdir(f"models/{clf_name}")
-    with open(f"./models/{clf_name}/clf.pkl", "wb") as file:
+    if out_path is None or not os.path.exists(f"{out_path}"):
+        out_path = "models"
+
+    if not os.path.exists(f"{out_path}/{clf_name}"):
+        os.mkdir(f"{out_path}/{clf_name}")
+    with open(f"./{out_path}/{clf_name}/clf.pkl", "wb") as file:
         pickle.dump(svc, file)
 
     # evaluate
@@ -108,7 +112,7 @@ def main(config_path):
     metrics = evaluate(svc, test_X, test_y)
 
     metrics_df = pd.DataFrame(metrics, index=[0])
-    metrics_df.to_csv(f"models/{clf_name}/metrics.csv", index=False)
+    metrics_df.to_csv(f"{out_path}/{clf_name}/metrics.csv", index=False)
 
     time_elapsed = round((time.time() - start_time), 2)
     if time_elapsed < 60:
