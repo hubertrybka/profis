@@ -38,7 +38,9 @@ class SELFIESVectorizer:
         X = np.zeros((len(splited), len(self.alphabet)))
         for i in range(len(splited)):
             if splited[i] not in self.alphabet:
-                raise ValueError(f"Invalid SELFIES token: {splited[i]} allowed tokens: {self.alphabet}")
+                raise ValueError(
+                    f"Invalid SELFIES token: {splited[i]} allowed tokens: {self.alphabet}"
+                )
             X[i, self.char2idx[splited[i]]] = 1
         return X
 
@@ -107,7 +109,6 @@ class SELFIESVectorizer:
 
 
 class SMILESVectorizer(SELFIESVectorizer):
-
     def __init__(self, pad_to_len=None, alphabet_path="data/smiles_alphabet.txt"):
         SELFIESVectorizer.__init__(self, pad_to_len)
         self.alphabet = self.read_alphabet(alphabet_path)

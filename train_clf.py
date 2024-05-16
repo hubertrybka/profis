@@ -51,7 +51,7 @@ def main(config_path, verbose=True):
     # load model
 
     split = model_path.split("/")
-    config_path = "/".join(split[:-1]) + '/hyperparameters.ini'
+    config_path = "/".join(split[:-1]) + "/hyperparameters.ini"
 
     if not os.path.exists(config_path):
         raise ValueError(f"Model config file {config_path} not found")
@@ -96,7 +96,7 @@ def main(config_path, verbose=True):
     print("Training set size:", train_X.shape[0]) if verbose else None
     print("Test set size:", test_X.shape[0]) if verbose else None
 
-    print("Training...")if verbose else None
+    print("Training...") if verbose else None
     svc.fit(train_X, train_y)
 
     # save model
@@ -168,12 +168,16 @@ def evaluate(model, test_X, test_y):
     try:
         roc_auc = roc_auc_score(df["label"], df["pred"])
     except ValueError:
-        print('ROC AUC score could not be calculated. Only one class present in the test set.')
+        print(
+            "ROC AUC score could not be calculated. Only one class present in the test set."
+        )
         roc_auc = 0
     try:
         tn, fp, fn, tp = confusion_matrix(df["label"], df["pred"]).ravel()
     except ValueError:
-        print('Confusion matrix could not be calculated. Only one class present in the test set.')
+        print(
+            "Confusion matrix could not be calculated. Only one class present in the test set."
+        )
         tn, fp, fn, tp = 0, 0, 0, 0
     metrics = {
         "accuracy": round(accuracy, 4),

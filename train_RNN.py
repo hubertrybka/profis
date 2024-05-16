@@ -125,7 +125,9 @@ def main(config_path):
 
     # Init model
 
-    model = initialize_model(config_path, device=device, use_dropout=True, teacher_forcing=True)
+    model = initialize_model(
+        config_path, device=device, use_dropout=True, teacher_forcing=True
+    )
 
     _ = train(config, model, train_loader, val_loader, scoring_loader)
     return None

@@ -5,7 +5,9 @@ import torch
 from profis.gen.generator import EncoderDecoderV3
 
 
-def initialize_model(config_path, device=torch.device("cpu"), use_dropout=False, teacher_forcing=False):
+def initialize_model(
+    config_path, device=torch.device("cpu"), use_dropout=False, teacher_forcing=False
+):
     """
     Initialize model from a given path
     Args:
@@ -27,7 +29,9 @@ def initialize_model(config_path, device=torch.device("cpu"), use_dropout=False,
         num_layers=int(config["MODEL"]["num_layers"]),
         dropout=float(config["MODEL"]["dropout"]) if use_dropout else 0.0,
         output_size=31 if use_selfies else 32,
-        teacher_ratio=float(config["MODEL"]["teacher_ratio"] if teacher_forcing else 0.0),
+        teacher_ratio=float(
+            config["MODEL"]["teacher_ratio"] if teacher_forcing else 0.0
+        ),
         random_seed=42,
         use_cuda=config.getboolean("RUN", "use_cuda"),
         fc1_size=int(config["MODEL"]["fc1_size"]),

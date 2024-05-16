@@ -12,7 +12,9 @@ class CCE(nn.Module):
         """
         super(CCE, self).__init__()
         alphabet_path = (
-            "data/selfies_alphabet.txt" if notation == "SELFIES" else "data/smiles_alphabet.txt"
+            "data/selfies_alphabet.txt"
+            if notation == "SELFIES"
+            else "data/smiles_alphabet.txt"
         )
         self.idx_ignore = self.determine_nop_idx(alphabet_path)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

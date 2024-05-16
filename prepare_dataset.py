@@ -69,6 +69,8 @@ def is_sparse(fp):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, help="Path to the dataset")
-    parser.add_argument("--skip_fingerprint", action="store_true", help="Skip fingerprint processing")
+    parser.add_argument(
+        "--skip_fingerprint", action="store_true", help="Skip fingerprint processing"
+    )
     args = parser.parse_args()
     prepare(args.data_path, args.skip_fingerprint)

@@ -7,9 +7,9 @@ from profis.utils.modelinit import initialize_model
 
 def test_encode():
 
-    test_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    test_model = initialize_model('tests/data/test_RNN_config.ini', test_device)
-    test_df = pd.read_parquet('tests/data/test_d2_dataset_KRFP.parquet')
+    test_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    test_model = initialize_model("tests/data/test_RNN_config.ini", test_device)
+    test_df = pd.read_parquet("tests/data/test_d2_dataset_KRFP.parquet")
 
     mus, logvars = encode(test_df, test_model, test_device, batch=2)
     assert mus.shape[0] == test_df.shape[0]
@@ -20,4 +20,3 @@ def test_encode():
     assert np.all(np.isfinite(logvars))
 
     return
-

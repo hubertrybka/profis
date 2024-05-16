@@ -56,7 +56,7 @@ def search(config_path, return_list):
     optimizer = BayesianOptimization(
         f=scorer,
         pbounds=pbounds,
-        random_state=(time.time_ns() % 10**6),
+        random_state=(time.time_ns() % 10 ** 6),
         verbose=verbosity > 1,
         bounds_transformer=bounds_transformer,
     )
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     dirname = "latent_vectors" + timestamp if add_timestamp else "latent_vectors"
-    output_path = ''.join(model_path.split("/")[:-1])
+    output_path = "".join(model_path.split("/")[:-1])
     os.mkdir(output_path) if not os.path.isdir(output_path) else None
     (
         os.mkdir(f"{output_path}/{dirname}")
