@@ -9,7 +9,9 @@ Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
    * [General info](#general-info)
    * [Setup](#setup)
-   * [Usage](#usage)
+   * [Basic usage](#basic-usage)
+   * [Advanced usage](#advanced-usage)
+   * [Dependencies](#dependencies)
 
 
 ## General info
@@ -68,8 +70,6 @@ pandas.DataFrame object. The dataframe must contain the following columns:
 
 Save dataframe to .parquet file in the previously created directory:
 
-#
-
 ```
 import pandas as pd
 df = pd.DataFrame(columns=['smiles', 'fps', 'activity'])
@@ -85,14 +85,14 @@ In config_files/SVC_config.ini, provide the path to the dataset file (data_path)
 The model weights are available in the `models` directory, if previously downloaded with `./get_data`. 
 The path to the RNN weights should look like this:
 
-    models/SMILES_KRFP/model.pt
+      models/SMILES_KRFP/model.pt
 
 Please provide the name of the previously created directory and name for the model in appropriate rubrics. 
 Other parameters can be set according to needs.
 
 Now, you can train the SVC activity predictor by running:
     
-        python train_clf.py
+      python train_clf.py
 
 For more info on the SVC classifier, please refer
 to [scikit-learn SVC documentation](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html).
@@ -102,7 +102,7 @@ and save the path to a model.pkl file created by the training script inside.
 
 It should look like this:
 
-    my_results/SVC/model.pkl
+      my_results/my_SVC/model.pkl
 
 ### Perform bayesian search on the latent space
 
@@ -113,7 +113,7 @@ Other parameters can be set according to needs.
 
 To perform bayesian search on the latent space, use the following command:
 
-    python bayesian_search.py
+      python bayesian_search.py
 
 For more info about the bayesian optimization process and the choice of non-default parameters refer to
 [bayesian-optimization README](https://github.com/bayesian-optimization/BayesianOptimization).
@@ -129,13 +129,13 @@ files:
 
 The generated compounds are filtered according to criteria that can be modified in `config_files/pred_config.ini`.
 
-In order to generate a library, run
+To generate a library of ligands, run
 
       python predict.py
 
 Other parameters and filter criteria can be set according to needs.
 
-As a result, in my_dir/mySVC, a new directory latent_vectors{timestamp} will be created. It contains the
+As a result, in my_results/my_SVC, a new directory latent_vectors{timestamp} will be created. It contains the
 following files:
 
 * predictions.csv, a file containing SMILES of the generated compounds, as well as some calculated molecular properties
@@ -154,7 +154,7 @@ batch downloaded using `get_data.sh`.
 
 If you intend to train the RNN, use the following command:
 
-    python train_RNN.py
+      python train_RNN.py
 
 Be sure to edit the config file in advance (config_files/RNN_config.ini) to set the desired parameters.
 In particular, you should provide a path to the RNN dataset file. This will be `data/RNN_dataset_KRFP.parquet`
