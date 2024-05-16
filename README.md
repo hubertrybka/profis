@@ -102,7 +102,7 @@ and save the path to a model.pkl file created by the training script inside.
 
 It should look like this:
 
-      my_results/SVC/model.pkl
+      my_results/my_SVC/model.pkl
 
 ### Perform bayesian search on the latent space
 
@@ -129,13 +129,13 @@ files:
 
 The generated compounds are filtered according to criteria that can be modified in `config_files/pred_config.ini`.
 
-In order to generate a library, run
+To generate a library of ligands, run
 
       python predict.py
 
 Other parameters and filter criteria can be set according to needs.
 
-As a result, in my_dir/mySVC, a new directory latent_vectors{timestamp} will be created. It contains the
+As a result, in my_results/my_SVC, a new directory latent_vectors{timestamp} will be created. It contains the
 following files:
 
 * predictions.csv, a file containing SMILES of the generated compounds, as well as some calculated molecular properties
