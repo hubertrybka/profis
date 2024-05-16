@@ -123,7 +123,8 @@ In the directory of the saved SVC model, a new 'latent_vectors' directory will b
 files:
 
 * latent_vectors.csv - latent vectors identified by the search
-* info.txt - information about the search process
+* config.ini - a copy of the configuration file used for the search
+* info.txt - additional information about the search process
 
 ### Generate compound libraries from the latent vectors
 
@@ -163,5 +164,15 @@ according to the length of the input fingerprint.
 
 Model weights and training progress will be saved to models/model_name catalog.
 
+## Dependencies
 
+* Python 3.8
+* RDKit
+* PyTorch
+* scikit-learn
+* pandas
+* numpy
+* tqdm
+* bayesian-optimization
+* unzip (for the execution of get_data.sh script)
 
