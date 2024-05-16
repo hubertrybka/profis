@@ -7,14 +7,13 @@ import rdkit.Chem.AllChem as AllChem
 import selfies as sf
 import numpy as np
 import torch
-import wandb
 
 from profis.gen.loss import CCE
 from profis.utils.annealing import Annealer
 from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer
 
 
-def train(config, model, train_loader, val_loader, scoring_loader, use_wandb):
+def train(config, model, train_loader, val_loader, scoring_loader):
     """
     Training loop for the model consisting of a VAE encoder and GRU decoder
     """
@@ -35,12 +34,6 @@ def train(config, model, train_loader, val_loader, scoring_loader, use_wandb):
     use_selfies = config.getboolean("RUN", "use_selfies")
 
     config_dict = {s: dict(config.items(s)) for s in config.sections()}
-    if use_wandb:
-        wandb.init(
-            project="post-review",
-            config=config_dict,
-            name=run_name,
-        )
 
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
 
@@ -117,8 +110,6 @@ def train(config, model, train_loader, val_loader, scoring_loader, use_wandb):
             "mean_fp_recon": mean_fp_recon,
             "mean_validity": mean_validity,
         }
-        if use_wandb:
-            wandb.log(metrics_dict)
         if kld_annealing:
             annealing_agent.step()
 
@@ -133,8 +124,6 @@ def train(config, model, train_loader, val_loader, scoring_loader, use_wandb):
         loop_time = (end_time - start_time) / 60  # in minutes
         print(f"Epoch {epoch} completed in {loop_time} minutes")
 
-    if use_wandb:
-        wandb.finish()
     return None
 
 

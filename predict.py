@@ -88,6 +88,10 @@ def main(config_path):
         else None
     )
 
+    # dump config
+    with open(f"{dirname}/preds_{timestamp}/config.ini", "w") as configfile:
+        config.write(configfile)
+
     # save images
     os.mkdir(f"{dirname}/preds_{timestamp}/imgs")
     for n, (idx, smiles) in enumerate(zip(df["idx"], df["smiles"])):
@@ -97,7 +101,7 @@ def main(config_path):
         )
 
     time_elapsed = time.time() - start_time
-    print(f"File processed in {(time_elapsed / 60):.2f} minutes")
+    print(f"{file_path} processed in {(time_elapsed / 60):.2f} minutes")
 
 
 if __name__ == "__main__":
