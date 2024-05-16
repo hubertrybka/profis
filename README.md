@@ -44,9 +44,8 @@ or by launching:
 
 **For successful execution of the script unzip must be installed**
 
-The script will download the datasets and models to the `data` and `models` directories respectively. The trained
-models  are essential for the proper functioning of the program.
-If you want to train the models yourself, please refer to the [Advanced usage](#advanced-usage) section.
+The script will download the datasets and models to the `data` and `models` directories respectively.
+If you want to train the RNN models yourself, please refer to the [Advanced usage](#advanced-usage) section.
 
 ### Create a directory for you to work in:
 
