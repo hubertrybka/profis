@@ -152,7 +152,7 @@ def main(config_path):
         fc3_enabled=fc3_enabled,
     ).to(device)
 
-    _ = train(config, model, train_loader, val_loader, scoring_loader, use_wandb=True)
+    _ = train(config, model, train_loader, val_loader, scoring_loader)
     return None
 
 

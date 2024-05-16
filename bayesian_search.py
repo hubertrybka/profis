@@ -6,7 +6,6 @@ import queue
 import random
 import time
 import warnings
-import wandb
 
 import numpy as np
 import pandas as pd
@@ -110,18 +109,18 @@ if __name__ == "__main__":
     bounds = float(config["SEARCH"]["bounds"])
     latent_size = int(config["SEARCH"]["latent_size"])
     model_path = config["SEARCH"]["model_path"]
+    add_timestamp = config["SEARCH"].getboolean("timestamp")
 
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    model_name = "bayesian_search_" + timestamp
-    os.mkdir("outputs") if not os.path.isdir("outputs") else None
+    dirname = "latent_vectors" + timestamp if add_timestamp else "latent_vectors"
+    output_path = ''.join(model_path.split("/")[:-1])
+    os.mkdir(output_path) if not os.path.isdir(output_path) else None
     (
-        os.mkdir(f"outputs/{model_name}")
-        if not os.path.isdir(f"outputs/{model_name}")
+        os.mkdir(f"{output_path}/{dirname}")
+        if not os.path.isdir(f"{output_path}/{dirname}")
         else None
     )
-
-    wandb.init(project="serach", name=model_name, config=config)
 
     samples = pd.DataFrame()  # placeholder
 
@@ -181,11 +180,9 @@ if __name__ == "__main__":
 
         # save the results
         samples = pd.concat(return_list)
-        samples.to_csv(f"outputs/{model_name}/latent_vectors.csv", index=False)
-        wandb.log({"samples": len(samples)})
+        samples.to_csv(f"{output_path}/{dirname}/latent_vectors.csv", index=False)
 
     end_time = time.time()
-    wandb.finish()
     time_elapsed = (end_time - start_time) / 60  # in minutes
     if time_elapsed < 60:
         (
@@ -207,7 +204,7 @@ if __name__ == "__main__":
         )
 
     # save the arguments
-    with open(f"outputs/{model_name}/info.txt", "w") as f:
+    with open(f"{output_path}/{dirname}/info.txt", "w") as f:
         text = [
             f"model_path: {model_path}",
             f"latent_size: {latent_size}",
@@ -225,4 +222,4 @@ if __name__ == "__main__":
         text = "\n".join(text)
         f.write(text)
 
-    print(f"Results saved to: outputs/{model_name}") if verbosity > 0 else None
+    print(f"Results saved to: {output_path}/{dirname}") if verbosity > 0 else None
