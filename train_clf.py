@@ -17,14 +17,14 @@ from profis.gen.generator import EncoderDecoderV3
 from profis.utils.modelinit import initialize_model
 
 
-def main(config_path):
+def main(config_path, verbose=True):
     """
     Trains an SVM classifier on the latent space of the model.
     """
 
     # read config file
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(allow_no_value=True)
     config.read(config_path)
     data_path = str(config["SVC"]["data_path"])
     model_path = str(config["SVC"]["model_path"])
@@ -39,27 +39,32 @@ def main(config_path):
 
     cuda_available = torch.cuda.is_available() and use_cuda
     device = torch.device("cuda" if cuda_available else "cpu")
-    print(f"Using device: {device}")
+    print(f"Using device: {device}") if verbose else None
 
     # read dataset
 
     data = pd.read_parquet(data_path, columns=["smiles", "activity", "fps"])
     data.reset_index(drop=True, inplace=True)
-    print(f"Loaded data from {data_path}")
+    print(f"Loaded data from {data_path}") if verbose else None
     activity = data["activity"]
 
     # load model
 
-    config_path = "/".join(model_path.split("/")[:-1]) + "/hyperparameters.ini"
+    split = model_path.split("/")
+    config_path = "/".join(split[:-1]) + '/hyperparameters.ini'
+
     if not os.path.exists(config_path):
         raise ValueError(f"Model config file {config_path} not found")
-    print(f"Reading model hyperparameters from {config_path}")
+    print(f"Reading model hyperparameters from {config_path}") if verbose else None
     model = initialize_model(config_path, device=device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+
+    if split[-1] != "dummy.pt":
+        print(f"Loading weights from {model_path}") if verbose else None
+        model.load_state_dict(torch.load(model_path, map_location=device))
 
     # encode data into latent space vectors
 
-    print("Encoding data...")
+    print("Encoding data") if verbose else None
     mus, _ = encode(data, model, device)
     data = pd.DataFrame(mus)
     data["activity"] = activity
@@ -88,34 +93,32 @@ def main(config_path):
     train_y = train["activity"]
     test_X = test.drop("activity", axis=1)
     test_y = test["activity"]
-    print("Training set size:", train_X.shape[0])
-    print("Test set size:", test_X.shape[0])
+    print("Training set size:", train_X.shape[0]) if verbose else None
+    print("Test set size:", test_X.shape[0]) if verbose else None
 
-    print("Training...")
+    print("Training...")if verbose else None
     svc.fit(train_X, train_y)
-    model_name = model_path.split("/")[-2]
-    clf_name = f"{name}_SVC_{model_name}"
 
     # save model
 
     if out_path is None or not os.path.exists(f"{out_path}"):
         out_path = "models"
 
-    if not os.path.exists(f"{out_path}/{clf_name}"):
-        os.mkdir(f"{out_path}/{clf_name}")
-    with open(f"./{out_path}/{clf_name}/clf.pkl", "wb") as file:
+    if not os.path.exists(f"{out_path}/{name}"):
+        os.mkdir(f"{out_path}/{name}")
+    with open(f"./{out_path}/{name}/clf.pkl", "wb") as file:
         pickle.dump(svc, file)
 
     # evaluate
 
-    print("Evaluating...")
+    print("Evaluating...") if verbose else None
     metrics = evaluate(svc, test_X, test_y)
 
     metrics_df = pd.DataFrame(metrics, index=[0])
-    metrics_df.to_csv(f"{out_path}/{clf_name}/metrics.csv", index=False)
+    metrics_df.to_csv(f"{out_path}/{name}/metrics.csv", index=False)
 
     # dump config
-    with open(f"{out_path}/{clf_name}/config.ini", "w") as configfile:
+    with open(f"{out_path}/{name}/config.ini", "w") as configfile:
         config.write(configfile)
 
     time_elapsed = round((time.time() - start_time), 2)
@@ -162,8 +165,16 @@ def evaluate(model, test_X, test_y):
     df["label"] = test_y.values
     df["pred"] = df["pred"].apply(lambda x: 1 if x > 0.5 else 0)
     accuracy = df[df["pred"] == df["label"]].shape[0] / df.shape[0]
-    roc_auc = roc_auc_score(df["label"], df["pred"])
-    tn, fp, fn, tp = confusion_matrix(df["label"], df["pred"]).ravel()
+    try:
+        roc_auc = roc_auc_score(df["label"], df["pred"])
+    except ValueError:
+        print('ROC AUC score could not be calculated. Only one class present in the test set.')
+        roc_auc = 0
+    try:
+        tn, fp, fn, tp = confusion_matrix(df["label"], df["pred"]).ravel()
+    except ValueError:
+        print('Confusion matrix could not be calculated. Only one class present in the test set.')
+        tn, fp, fn, tp = 0, 0, 0, 0
     metrics = {
         "accuracy": round(accuracy, 4),
         "roc_auc": round(roc_auc, 4),

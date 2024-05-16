@@ -58,3 +58,8 @@ models/D2_SVC_SELFIES_ECFP/clf.pkl
 .idea/vcs.xml
 .idea/profis.iml
 .idea/inspectionProfiles/profiles_settings.xml
+__pycache__/predict.cpython-311.pyc
+__pycache__/train_clf.cpython-311.pyc
+profis/pred/__pycache__/__init__.cpython-311.pyc
+profis/pred/__pycache__/pred.cpython-311.pyc
+tests/__pycache__/test_scripts.cpython-311-pytest-8.2.0.pyc
