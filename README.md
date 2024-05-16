@@ -70,8 +70,6 @@ pandas.DataFrame object. The dataframe must contain the following columns:
 
 Save dataframe to .parquet file in the previously created directory:
 
-#
-
 ```
 import pandas as pd
 df = pd.DataFrame(columns=['smiles', 'fps', 'activity'])
