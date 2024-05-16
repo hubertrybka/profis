@@ -9,7 +9,9 @@ Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
    * [General info](#general-info)
    * [Setup](#setup)
-   * [Usage](#usage)
+   * [Basic usage](#basic-usage)
+   * [Advanced usage](#advanced-usage)
+   * [Dependencies](#dependencies)
 
 
 ## General info
