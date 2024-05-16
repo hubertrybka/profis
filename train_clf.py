@@ -114,11 +114,15 @@ def main(config_path):
     metrics_df = pd.DataFrame(metrics, index=[0])
     metrics_df.to_csv(f"{out_path}/{clf_name}/metrics.csv", index=False)
 
+    # dump config
+    with open(f"{out_path}/{clf_name}/config.ini", "w") as configfile:
+        config.write(configfile)
+
     time_elapsed = round((time.time() - start_time), 2)
     if time_elapsed < 60:
-        print(f"Executed in {time_elapsed} seconds")
+        print(f"SVC training finished in {time_elapsed} seconds")
     else:
-        print(f"Executed in {round(time_elapsed / 60, 2)} minutes")
+        print(f"SVC training finished in {round(time_elapsed / 60, 2)} minutes")
     return
 
 
