@@ -85,7 +85,7 @@ In config_files/SVC_config.ini, provide the path to the dataset file (data_path)
 The model weights are available in the `models` directory, if previously downloaded with `./get_data`. 
 The path to the RNN weights should look like this:
 
-    models/SMILES_KRFP/epoch_150.pt
+    models/SMILES_KRFP/model.pt
 
 Please provide the name of the previously created directory and name for the model in appropriate rubrics. 
 Other parameters can be set according to needs.
@@ -171,7 +171,6 @@ Model weights and training progress will be saved to models/model_name catalog.
 * scikit-learn
 * pandas
 * numpy
-* tqdm
 * bayesian-optimization
 * unzip (for the execution of get_data.sh script)
 

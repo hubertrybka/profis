@@ -4,13 +4,13 @@ import numpy as np
 
 
 class SELFIESVectorizer:
-    def __init__(self, pad_to_len=None):
+    def __init__(self, pad_to_len=None, alphabet_path="data/selfies_alphabet.txt"):
         """
         SELFIES vectorizer
         Args:
             pad_to_len (int):size of the padding
         """
-        self.alphabet = self.read_alphabet("data/alphabet.txt")
+        self.alphabet = self.read_alphabet(alphabet_path)
         self.char2idx = {s: i for i, s in enumerate(self.alphabet)}
         self.idx2char = {i: s for i, s in enumerate(self.alphabet)}
         self.pad_to_len = pad_to_len
@@ -37,6 +37,8 @@ class SELFIESVectorizer:
             )
         X = np.zeros((len(splited), len(self.alphabet)))
         for i in range(len(splited)):
+            if splited[i] not in self.alphabet:
+                raise ValueError(f"Invalid SELFIES token: {splited[i]} allowed tokens: {self.alphabet}")
             X[i, self.char2idx[splited[i]]] = 1
         return X
 
@@ -106,9 +108,9 @@ class SELFIESVectorizer:
 
 class SMILESVectorizer(SELFIESVectorizer):
 
-    def __init__(self, pad_to_len=None):
+    def __init__(self, pad_to_len=None, alphabet_path="data/smiles_alphabet.txt"):
         SELFIESVectorizer.__init__(self, pad_to_len)
-        self.alphabet = self.read_alphabet("data/smiles_alphabet.txt")
+        self.alphabet = self.read_alphabet(alphabet_path)
         self.char2idx = {s: i for i, s in enumerate(self.alphabet)}
         self.idx2char = {i: s for i, s in enumerate(self.alphabet)}
         self.pad_to_len = pad_to_len
