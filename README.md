@@ -16,12 +16,16 @@ Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
 ## General info
 
-PROFIS is a generative model that allows for the design of target-focused compound libraries by probing continuous 
-fingerprint space with RNNs. PROFIS is a VAE that encodes molecular FPs and decodes molecule structures 
-in a sequential notation so that the resulting compounds match the initial FP description. In the task of generating 
+PROFIS is a generative model that allows for the design of target-focused compound libraries by **pro**bing continuous 
+**fi**ngerprint **s**pace with RNNs in a reverse QSAR-type task. PROFIS is a VAE that encodes molecular FPs and decodes molecule structures 
+in a sequential notation so that the resulting compounds match the initial FP description. In the process of generating 
 potential novel ligands, PROFIS employs a Bayesian search algorithm to explore the space of embedded molecular fingerprints 
 and identify subspaces that correspond to the known binders. Because many FPs do not determine the full chemical structure, 
 our method can generate a diverse set of molecules that match the FP description.
+
+<p align="center">
+   <img src="https://github.com/hubertrybka/profis/blob/main/figures/architecture.png" width="600">
+</p>
 
 ## Setup
 
@@ -153,10 +157,6 @@ following files:
   (QED, MW, logP, ring info, RO5 info etc.)
 * imgs directory, in which .png files depicting the structures of the generated compounds are located
 * config.ini, a copy of the configuration file used for prediction (incl. filter criteria)
-
-<p align="center">
-   <img src="https://github.com/hubertrybka/profis/blob/main/figures/predictions.png" width="800">
-</p>
 
 ## Advanced usage
 
