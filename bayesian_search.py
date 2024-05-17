@@ -28,8 +28,6 @@ def search(config_path, return_list):
     Args:
         config_path: path to the config file
         return_list: list to append results to (multiprocessing)
-    Returns:
-        None
     """
 
     # read config file
@@ -45,7 +43,7 @@ def search(config_path, return_list):
 
     # initialize scorer
     latent_size = latent_size
-    scorer = SKLearnScorer(model_path, penalize=False)
+    scorer = SKLearnScorer(model_path)
 
     # define bounds
     pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
@@ -82,7 +80,7 @@ def search(config_path, return_list):
     samples["score"] = samples["score"].astype(float)
     samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
     return_list.append(samples)
-    return None
+    return
 
 
 if __name__ == "__main__":

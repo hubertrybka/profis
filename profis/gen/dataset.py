@@ -7,16 +7,16 @@ from torch.utils.data import Dataset
 
 
 class SELFIESDataset(Dataset):
+    """
+    Dataset class for handling GRU training data.
+    Parameters:
+        df (pd.DataFrame): dataframe containing SMILES and fingerprints,
+                           SMILES must be contained in ['smiles'] column as strings,
+                           fingerprints must be contained in ['fps'] column as lists
+                           of integers (dense vectors).
+        vectorizer: SELFIES vectorizer instantiated from vectorizer.py
+    """
     def __init__(self, df, vectorizer, fp_len=4860, smiles_enum=False):
-        """
-        Dataset class for handling GRU training data.
-        Args:
-            df (pd.DataFrame): dataframe containing SMILES and fingerprints,
-                               SMILES must be contained in ['smiles'] column as strings,
-                               fingerprints must be contained in ['fps'] column as lists
-                               of integers (dense vectors).
-            vectorizer: SELFIES vectorizer instantiated from vectorizer.py
-        """
         self.smiles = df["smiles"]
         self.fps = df["fps"]
         self.fps = self.prepare_X(self.fps)
@@ -99,16 +99,16 @@ class SELFIESDataset(Dataset):
 
 
 class SMILESDataset(Dataset):
+    """
+    Dataset class for handling GRU training data.
+    Parameters:
+        df (pd.DataFrame): dataframe containing SMILES and fingerprints,
+                           SMILES must be contained in ['smiles'] column as strings,
+                           fingerprints must be contained in ['fps'] column as lists
+                           of integers (dense vectors).
+        vectorizer: SMILES vectorizer instantiated from vectorizer.py
+    """
     def __init__(self, df, vectorizer, fp_len=4860, smiles_enum=False):
-        """
-        Dataset class for handling GRU training data.
-        Args:
-            df (pd.DataFrame): dataframe containing SMILES and fingerprints,
-                               SMILES must be contained in ['smiles'] column as strings,
-                               fingerprints must be contained in ['fps'] column as lists
-                               of integers (dense vectors).
-            vectorizer: SELFIES vectorizer instantiated from vectorizer.py
-        """
         self.smiles = df["smiles"]
         self.fps = df["fps"]
         self.fps = self.prepare_X(self.fps)
@@ -173,7 +173,7 @@ class SMILESDataset(Dataset):
 class LatentEncoderDataset(Dataset):
     """
     Dataset for encoding fingerprints into latent space.
-    Args:
+    Parameters:
         df (pd.DataFrame): pandas DataFrame object containing 'fps' column, which contains fingerprints
         in the form of lists of integers (dense representation)
         fp_len (int): length of fingerprints

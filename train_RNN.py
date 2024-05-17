@@ -17,6 +17,8 @@ from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer
 def main(config_path):
     """
     Training script for model with fully-connected encoder and GRU decoder
+    Args:
+        config_path: path to config file
     """
 
     # read config file

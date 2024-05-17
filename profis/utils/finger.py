@@ -4,11 +4,19 @@ import torch
 import torch.utils.data as Data
 from rdkit import Chem
 from tqdm import tqdm
+from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
 
 from profis.gen.dataset import LatentEncoderDataset
 
 
-def smiles2sparse(smiles):
+def smiles2sparse_KRFP(smiles):
+    """
+    Convert SMILES string to sparse Klekota&Roth fingerprint
+    Args:
+        smiles (str): SMILES string
+    Returns:
+        np.array: sparse fingerprint
+    """
     mol = Chem.MolFromSmiles(smiles)
     keys = "data/KlekFP_keys.txt"
     klek_keys = [line.strip() for line in open(keys)]
@@ -22,7 +30,14 @@ def smiles2sparse(smiles):
     return np.array(fp_list)
 
 
-def smiles2dense(smiles):
+def smiles2dense_KRFP(smiles):
+    """
+    Convert SMILES string to dense Klekota&Roth fingerprint
+    Args:
+        smiles (str): SMILES string
+    Returns:
+        np.array: dense fingerprint
+    """
     mol = Chem.MolFromSmiles(smiles)
     keys = "data/KlekFP_keys.txt"
     klek_keys = [line.strip() for line in open(keys)]
@@ -96,3 +111,17 @@ def encode(df, model, device, batch=1024):
         mus = np.concatenate(mus, axis=0)
         logvars = np.concatenate(logvars, axis=0)
     return mus, logvars
+
+
+def smiles2sparse_ECFP(smiles, n_bits=1024):
+    """
+    Convert SMILES string to sparse ECFP fingerprint
+    Args:
+        smiles (str): SMILES string
+        n_bits (int): number of bits in the fingerprint
+    Retu=rns:
+        np.array: sparse fingerprint
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    fp = np.array(GetMorganFingerprintAsBitVect(mol, 2, nBits=n_bits))
+    return np.array(fp)

@@ -19,7 +19,10 @@ from profis.utils.modelinit import initialize_model
 
 def main(config_path, verbose=True):
     """
-    Trains an SVM classifier on the latent space of the model.
+    Trains an SVM classifier on the latent embeddings of the known ligands.
+    Args:
+        config_path (str): path to the config file
+        verbose (bool): whether to print the progress
     """
 
     # read config file
@@ -159,6 +162,15 @@ def encode(df, model, device):
 
 
 def evaluate(model, test_X, test_y):
+    """
+    Evaluates the SVC model performance on the test set.
+    Args:
+        model (sklearn.svm.SVC): trained model
+        test_X: test set features
+        test_y: test set labels
+    Returns:
+        metrics (dict): dictionary containing accuracy, ROC AUC and confusion matrix metrics
+    """
     predictions = model.predict_proba(test_X)[:, 1]
     df = pd.DataFrame()
     df["pred"] = predictions

@@ -14,11 +14,9 @@ from profis.utils.modelinit import initialize_model
 
 def main(config_path):
     """
-    Predicting molecules using the trained model.
-
+    Generates structure predictions for the latent embeddings of molecular fingerprints.
     Args:
         config_path: Path to the config file.
-    Returns: None
     """
 
     start_time = time.time()
@@ -103,6 +101,7 @@ def main(config_path):
     time_elapsed = time.time() - start_time
     print(f"{file_path} processed in {(time_elapsed / 60):.2f} minutes")
 
+    return
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

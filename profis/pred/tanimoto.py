@@ -46,6 +46,9 @@ def unpack(ls: list):
 
 
 class TanimotoSearch:
+    """
+    Tanimoto search class for searching similar molecules in the training set.
+    """
     def __init__(self, return_smiles=False, progress_bar=True):
         data_path = "data/train_morgan_512bits.parquet"
         self.fps = pd.read_parquet(data_path).fps.apply(eval)
