@@ -155,7 +155,7 @@ following files:
 * config.ini, a copy of the configuration file used for prediction (incl. filter criteria)
 
 <p align="center">
-   <img src="https://github.com/hubertrybka/profis/blob/main/figures/predictions.png" width="600">
+   <img src="https://github.com/hubertrybka/profis/blob/main/figures/predictions.png" width="800">
 </p>
 
 ## Advanced usage
