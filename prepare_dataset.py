@@ -26,7 +26,7 @@ def prepare(data_path, gen_ecfp=False, gen_krfp=False, to_dense=True):
 
     # Check the column names
     df.columns = df.columns.str.lower()
-    if 'fps' in df.columns and (gen_ecfp or gen_krfp):
+    if "fps" in df.columns and (gen_ecfp or gen_krfp):
         raise ValueError("Fingerprint column already exists in the dataset")
 
     for name in ["smiles", "activity", "fps"]:
@@ -41,7 +41,9 @@ def prepare(data_path, gen_ecfp=False, gen_krfp=False, to_dense=True):
 
     # Check for compatibility with the model's token alphabet
     vectorizer = SMILESVectorizer()
-    df["is_compatible"] = df["smiles"].apply(check_if_alphabet_compatibile, vectorizer=vectorizer)
+    df["is_compatible"] = df["smiles"].apply(
+        check_if_alphabet_compatibile, vectorizer=vectorizer
+    )
     df = df[df["is_compatible"]]
 
     # Generate fingerprints
@@ -99,8 +101,16 @@ def check_if_alphabet_compatibile(smiles, vectorizer):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, help="Path to the dataset")
-    parser.add_argument("--gen_ecfp", action="store_true", help="Generate ECFP fingerprints")
-    parser.add_argument("--gen_krfp", action="store_true", help="Generate KRFP fingerprints")
-    parser.add_argument("--to_dense", action="store_true", help="Convert sparse fingerprints to dense fingerprints")
+    parser.add_argument(
+        "--gen_ecfp", action="store_true", help="Generate ECFP fingerprints"
+    )
+    parser.add_argument(
+        "--gen_krfp", action="store_true", help="Generate KRFP fingerprints"
+    )
+    parser.add_argument(
+        "--to_dense",
+        action="store_true",
+        help="Convert sparse fingerprints to dense fingerprints",
+    )
     args = parser.parse_args()
     prepare(args.data_path, args.skip_fingerprint)

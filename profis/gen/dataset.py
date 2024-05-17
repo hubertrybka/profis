@@ -16,6 +16,7 @@ class SELFIESDataset(Dataset):
                            of integers (dense vectors).
         vectorizer: SELFIES vectorizer instantiated from vectorizer.py
     """
+
     def __init__(self, df, vectorizer, fp_len=4860, smiles_enum=False):
         self.smiles = df["smiles"]
         self.fps = df["fps"]
@@ -108,6 +109,7 @@ class SMILESDataset(Dataset):
                            of integers (dense vectors).
         vectorizer: SMILES vectorizer instantiated from vectorizer.py
     """
+
     def __init__(self, df, vectorizer, fp_len=4860, smiles_enum=False):
         self.smiles = df["smiles"]
         self.fps = df["fps"]
