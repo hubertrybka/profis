@@ -3,9 +3,19 @@ import argparse
 import rdkit.Chem as Chem
 import rdkit.Chem.MolStandardize.rdMolStandardize as rdMolStandardize
 from profis.utils.finger import sparse2dense, smiles2sparse_KRFP, smiles2sparse_ECFP
+from profis.utils.vectorizer import SMILESVectorizer
 
 
 def prepare(data_path, gen_ecfp=False, gen_krfp=False, to_dense=True):
+    """
+    Prepare the dataset by standardizing the SMILES strings, checking for compatibility with
+    the model's token alphabet and (optionally) generating fingerprints.
+    Args:
+        data_path (str): Path to the dataset.
+        gen_ecfp (bool): Generate ECFP fingerprints.
+        gen_krfp (bool): Generate KRFP fingerprints.
+        to_dense (bool): Convert sparse fingerprints to dense fingerprints.
+    """
 
     # handle input
     if gen_ecfp and gen_krfp:
@@ -29,11 +39,15 @@ def prepare(data_path, gen_ecfp=False, gen_krfp=False, to_dense=True):
     df["smiles"] = df["smiles"].apply(try_standardize_smiles)
     df = df.dropna(subset=["smiles"])
 
+    # Check for compatibility with the model's token alphabet
+    vectorizer = SMILESVectorizer()
+    df["is_compatible"] = df["smiles"].apply(check_if_alphabet_compatibile, vectorizer=vectorizer)
+    df = df[df["is_compatible"]]
+
+    # Generate fingerprints
     if gen_ecfp:
-        # Generate ECFP fingerprints
         df["fps"] = df["smiles"].apply(smiles2sparse_ECFP)
     elif gen_krfp:
-        # Generate KRFP fingerprints
         df["fps"] = df["smiles"].apply(smiles2sparse_KRFP)
 
     # Convert sparse fingerprints to dense fingerprints
@@ -64,6 +78,22 @@ def try_standardize_smiles(smiles):
     except:
         return None
     return Chem.MolToSmiles(uncharged_mol)
+
+
+def check_if_alphabet_compatibile(smiles, vectorizer):
+    """
+    Check if the SMILES string is compatible with the model's token alphabet.
+    Args:
+        smiles (str): SMILES string.
+        vectorizer (SMILESVectorizer): SMILES vectorizer.
+    Returns:
+        bool: True if the SMILES string is compatible, False otherwise.
+    """
+    try:
+        vectorizer.vectorize(smiles)
+    except ValueError:
+        return False
+    return True
 
 
 if __name__ == "__main__":
