@@ -60,10 +60,9 @@ pandas.DataFrame object. The dataframe must contain the following columns:
 
 * 'smiles' - SMILES strings of known ligands in canonical format.
 
-* 'fps' - Klekota&Roth or Morgan (radius=2, nBits=2048) fingerprints of the ligands.  
-  The fingerprints have to be saved as ordinary python lists, in **dense format** (a list of ints designating the indices
-  of **active bits** in the original fingerprint).
-  For a Python function to convert sparse molecular fingerprints into dense format, see src.utils.finger.sparse2dense.
+* 'fps' (optional) - Molecular fingerprints of the ligands. **This column is optional, as later you will be able to generate those from SMILES**.
+  The fingerprints have to be saved as ordinary python lists, in dense format (a list of ints designating the indices
+  of active bits in the original fingerprint).
 
 * 'activity' - Activity class (True, False). By default, we define active compounds as those having
   Ki value <= 100nM and inactive as those of Ki > 100nM.
@@ -79,15 +78,27 @@ df = pd.DataFrame(columns=['smiles', 'fps', 'activity'])
 df.to_parquet('my_results/my_dataset.parquet', index=False)
 ```
 
+You then have to preprocess the data using:
+
+      python prepare_dataset.py
+
+This script takes the following arguments:
+```
+--data_path PATH      Path to the dataset in .parquet format
+--gen_ecfp            Flag to generate ECFP fingerprints
+--gen_krfp            Flag to Generate KRFP fingerprints
+--to_dense            Flag to only convert sparse fingerprints in 'fps' column to dense format
+```
+
 ### Train the SVC activity predictor:
 
-In config_files/SVC_config.ini, provide the path to the dataset file (data_path) and the path to the trained RNN model.
-The model weights are available in the `models` directory, if previously downloaded with `./get_data`. 
+In config_files/SVC_config.ini, provide the path to the preprocessed dataset file (data_path) and the path to the trained RNN model.
+The model weights are available in the `models` directory if previously downloaded with `./get_data`. 
 The path to the RNN weights should look like this:
 
       models/SMILES_KRFP/model.pt
 
-Please provide the name of the previously created directory and name for the model in appropriate rubrics. 
+Please provide the name of the previously created directory and the name of the model in the appropriate rubrics. 
 Other parameters can be set according to needs.
 
 Now, you can train the SVC activity predictor by running:
