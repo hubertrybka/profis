@@ -1,46 +1,72 @@
 # Test dataset
-from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer
-from profis.gen.dataset import SELFIESDataset, SMILESDataset, LatentEncoderDataset
+from profis.utils.vectorizer import (
+    SELFIESVectorizer,
+    SMILESVectorizer,
+    DeepSMILESVectorizer,
+)
+from profis.gen.dataset import (
+    SELFIESDataset,
+    SMILESDataset,
+    DeepSMILESDataset,
+    LatentEncoderDataset,
+)
 import pandas as pd
 
 
-def test_vectorizers():
-    # Test SELFIES and SMILES vectorizers
+def test_smiles_vectorizer():
+    # Test SMILES vectorizer
     seq_length = 128
-    selfies_vec = SELFIESVectorizer(
-        pad_to_len=seq_length, alphabet_path="data/selfies_alphabet.txt"
-    )
     smiles_vec = SMILESVectorizer(
         pad_to_len=seq_length, alphabet_path="data/smiles_alphabet.txt"
     )
 
-    run_vectorizer_check(selfies_vec, seq_length)
-    run_vectorizer_check(smiles_vec, seq_length)
+    assert len(smiles_vec.alphabet) > 0
+    test_smile = "C1C2=NN=CN2C3=C(C=C(C=C3)Cl)C(=N1)C4=CC=CC=C4"
 
+    ohe = smiles_vec.vectorize(test_smile)
+    reconstructed = smiles_vec.devectorize(ohe, remove_special=True)
+    assert ohe.shape == (seq_length, len(smiles_vec.alphabet))
+    assert sum(sum(ohe)) == seq_length
+    assert reconstructed == test_smile
     return
 
 
-def run_vectorizer_check(vectorizer, seq_length):
-    assert len(vectorizer.alphabet) > 0
-    test_smile = "C1C2=NN=CN2C3=C(C=C(C=C3)Cl)C(=N1)C4=CC=CC=C4"
-    test_selfie = (
-        "[C][C][=N][N][=C][N][Ring1][Branch1][C][=C][Branch1][#Branch2][C][=C][Branch1][Branch1][C][=C]"
-        "[Ring1][=Branch1][Cl][C][=Branch1][Ring2][=N][Ring1][#C][C][=C][C][=C][C][=C][Ring1][=Branch1]"
+def test_selfies_vectorizer():
+    # Test SELFIES vectorizer
+    seq_length = 128
+    selfies_vec = SELFIESVectorizer(
+        pad_to_len=seq_length, alphabet_path="data/selfies_alphabet.txt"
     )
 
-    if isinstance(vectorizer, SMILESVectorizer):  # SMILES vectorizer
-        ohe = vectorizer.vectorize(test_smile)
-        reconstructed = vectorizer.devectorize(ohe, remove_special=True)
-        assert ohe.shape == (seq_length, len(vectorizer.alphabet))
-        assert sum(sum(ohe)) == seq_length
-        assert reconstructed == test_smile
+    assert len(selfies_vec.alphabet) > 0
+    test_selfie = (
+        "[C][S][=Branch1][C][=O][=Branch1][C][=O][N][C][=C][C][=C][Branch2][Ring2][Ring1][C][=N][N][Branch1]"
+        "[=Branch2][S][Branch1][C][C][=Branch1][C][=O][=O][C][Branch1][#C][C][=C][C][=C][N][=C][C][=N][C]"
+        "[Ring1][=Branch1][=C][Ring1][#Branch2][C][Ring2][Ring1][Ring1][C][=C][Ring2][Ring1][=Branch2]"
+    )
+    ohe = selfies_vec.vectorize(test_selfie)
+    reconstructed = selfies_vec.devectorize(ohe, remove_special=True)
+    assert ohe.shape == (seq_length, len(selfies_vec.alphabet))
+    assert sum(sum(ohe)) == seq_length
+    assert reconstructed == test_selfie
+    return
 
-    else:  # SELFIES vectorizer
-        ohe = vectorizer.vectorize(test_selfie)
-        reconstructed = vectorizer.devectorize(ohe, remove_special=True)
-        assert ohe.shape == (seq_length, len(vectorizer.alphabet))
-        assert sum(sum(ohe)) == seq_length
-        assert reconstructed == test_selfie
+
+def test_deepsmiles_vectorizer():
+    # Test DeepSMILES vectorizer
+    seq_length = 128
+    deepsmiles_vec = DeepSMILESVectorizer(
+        pad_to_len=seq_length, alphabet_path="data/deepsmiles_alphabet.txt"
+    )
+
+    assert len(deepsmiles_vec.alphabet) > 0
+    test_deepsmile = "CCCC=O)NCcccco5))))))))nncC)ccC)n-ccccC)cc6))))))nc5c9=O"
+
+    ohe = deepsmiles_vec.vectorize(test_deepsmile)
+    reconstructed = deepsmiles_vec.devectorize(ohe, remove_special=True)
+    assert ohe.shape == (seq_length, len(deepsmiles_vec.alphabet))
+    assert sum(sum(ohe)) == seq_length
+    assert reconstructed == test_deepsmile
     return
 
 
@@ -60,8 +86,16 @@ def test_datasets():
         fp_len=4860,
     )
 
+    deepsmiles_vec = DeepSMILESVectorizer(pad_to_len=128)
+    deepsmiles_dataset = DeepSMILESDataset(
+        pd.read_parquet("tests/data/test_RNN_dataset_KRFP.parquet"),
+        vectorizer=deepsmiles_vec,
+        fp_len=4860,
+    )
+
     run_dataset_check(selfies_dataset, selfies_vec)
     run_dataset_check(smiles_dataset, smiles_vec)
+    run_dataset_check(deepsmiles_dataset, deepsmiles_vec)
 
     # Test latent encoder dataset
     encoder_dataset = LatentEncoderDataset(
