@@ -4,14 +4,11 @@ import os
 import pickle
 import time
 
-import numpy as np
 import pandas as pd
 import torch
-import torch.utils.data as D
 from sklearn.svm import SVC
 
-from profis.gen.dataset import LatentEncoderDataset
-from profis.gen.generator import EncoderDecoderV3
+from profis.utils.finger import encode
 from profis.utils.modelinit import initialize_model
 from profis.clf.model_selection import cross_evaluate, grid_search
 
@@ -67,7 +64,6 @@ def main(config_path, verbose=True):
 
     # encode data into latent space vectors
 
-    print("Encoding data") if verbose else None
     mus, _ = encode(data, model, device)
     data = pd.DataFrame(mus)
     data["activity"] = activity
@@ -131,39 +127,10 @@ def main(config_path, verbose=True):
 
     time_elapsed = round((time.time() - start_time), 2)
     if time_elapsed < 60:
-        print(f"SVC training finished in {time_elapsed} seconds")
+        print(f"Finished in {time_elapsed} seconds")
     else:
-        print(f"SVC training finished in {round(time_elapsed / 60, 2)} minutes")
+        print(f"Finished in {round(time_elapsed / 60, 2)} minutes")
     return
-
-
-def encode(df, model, device):
-    """
-    Encodes the fingerprints of the molecules in the dataframe using VAE encoder.
-    Args:
-        df (pd.DataFrame): dataframe containing 'fps' column with Klekota&Roth fingerprints
-            in the form of a list of integers (dense representation)
-        model (EncoderDecoderV3): model to be used for encoding
-        device (torch.device): device to be used for encoding
-    Returns:
-        mus (np.ndarray): array of means of the latent space
-        logvars (np.ndarray): array of logvars of the latent space
-    """
-    dataset = LatentEncoderDataset(df, fp_len=model.fp_size)
-    dataloader = D.DataLoader(dataset, batch_size=1024, shuffle=False)
-    mus = []
-    logvars = []
-    model.eval()
-    with torch.no_grad():
-        for batch in dataloader:
-            X = batch.to(device)
-            mu, logvar = model.encoder(X)
-            mus.append(mu.cpu().numpy())
-            logvars.append(logvar.cpu().numpy())
-
-        mus = np.concatenate(mus, axis=0)
-        logvars = np.concatenate(logvars, axis=0)
-    return mus, logvars
 
 
 if __name__ == "__main__":
