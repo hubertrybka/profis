@@ -37,7 +37,7 @@ def main(config_path):
     dataloader_workers = int(config["RUN"]["num_workers"])
     fp_len = int(config["MODEL"]["fp_len"])
     use_cuda = config.getboolean("RUN", "use_cuda")
-    out_encoding = str(config["MODEL"]["out_encoding"])
+    out_encoding = str(config["RUN"]["out_encoding"])
     val_size = round(1 - train_size, 1)
     train_percent = int(train_size * 100)
     val_percent = int(val_size * 100)
