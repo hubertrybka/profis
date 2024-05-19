@@ -3,19 +3,22 @@ import torch.nn as nn
 
 
 class CCE(nn.Module):
-    def __init__(self, notation: str = "SMILES"):
+    def __init__(self, notation: str = "smiles"):
         """
-        Conscious Cross-Entropy. Calculates cross-entropy loss on two SMILES or SELFIES,
+        Conscious Cross-Entropy. Calculates cross-entropy loss on two sequences,
         ignoring indices of padding tokens.
         Parameters:
-            notation (str): format of the input strings. Either "SELFIES" or "SMILES"
+            notation (str): format of the input strings. Must be "smiles", "selfies" or "deepsmiles".
         """
         super(CCE, self).__init__()
-        alphabet_path = (
-            "data/selfies_alphabet.txt"
-            if notation == "SELFIES"
-            else "data/smiles_alphabet.txt"
-        )
+        if notation == "smiles":
+            alphabet_path = "data/smiles_alphabet.txt"
+        elif notation == "selfies":
+            alphabet_path = "data/selfies_alphabet.txt"
+        elif notation == "deepsmiles":
+            alphabet_path = "data/deepsmiles_alphabet.txt"
+        else:
+            raise ValueError("Notation must be 'smiles', 'selfies' or 'deepsmiles'.")
         self.idx_ignore = self.determine_nop_idx(alphabet_path)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

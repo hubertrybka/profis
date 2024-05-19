@@ -3,18 +3,19 @@ import pandas as pd
 import rdkit.Chem.Crippen as Crippen
 import selfies as sf
 import torch
+import deepsmiles as ds
 from rdkit import Chem
 from rdkit.Chem import QED, rdMolDescriptors
 from torch.utils.data import DataLoader
 
-from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer
+from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer, DeepSMILESVectorizer
 
 
 def predict(
     model,
     latent_vectors: np.array,
     device: torch.device = torch.device("cpu"),
-    use_selfies: bool = False,
+    format: str = 'smiles',
     batch_size: int = 512,
 ):
     """
@@ -23,16 +24,21 @@ def predict(
         model (torch.nn.Module): EncoderDecoderV3 model.
         latent_vectors (np.array): numpy array of latent vectors. Shape = (n_samples, latent_size).
         device: device to use for prediction. Can be 'cpu' or 'cuda'.
-        use_selfies: if True, use SELFIES as the output format.
+        format: format of the output. Can be 'smiles', 'selfies' or 'deepsmiles'.
         batch_size: batch size for prediction.
 
     Returns:
         pd.DataFrame: Dataframe containing smiles and scores.
     """
-    if use_selfies:
+    if format == 'selfies':
         vectorizer = SELFIESVectorizer(pad_to_len=128)
-    else:
+    elif format == 'smiles':
         vectorizer = SMILESVectorizer(pad_to_len=128)
+    elif format == 'deepsmiles':
+        vectorizer = DeepSMILESVectorizer(pad_to_len=128)
+    else:
+        raise ValueError(f"Invalid format. Must be 'smiles', 'selfies' or 'deepsmiles'.")
+
     device = torch.device(device)
 
     loader = DataLoader(latent_vectors, batch_size=batch_size, shuffle=False)
@@ -48,17 +54,25 @@ def predict(
             preds_list.append(preds)
         preds_concat = np.concatenate(preds_list)
 
-        if use_selfies:
+        if format == 'selfies':
             df["selfies"] = [
                 vectorizer.devectorize(pred, remove_special=True)
                 for pred in preds_concat
             ]
             df["smiles"] = df["selfies"].apply(sf.decoder)
-        else:
+        elif format == 'smiles':
             df["smiles"] = [
                 vectorizer.devectorize(pred, remove_special=True)
                 for pred in preds_concat
             ]
+        elif format == 'deepsmiles':
+            converter = ds.Converter(rings=True, branches=True)
+            df["deepsmiles"] = [
+                vectorizer.devectorize(pred, remove_special=True)
+                for pred in preds_concat
+            ]
+            df["smiles"] = df["deepsmiles"].apply(converter.decode)
+
         df["idx"] = range(len(df))
         df = df.sort_values(by=["idx"])
     return df

@@ -202,6 +202,48 @@ def evaluate(model, test_X, test_y):
     return metrics
 
 
+def cross_evaluate(model, X, y, n_splits=5):
+    """
+    Cross-evaluates the SVC model performance on the training set.
+    Args:
+        model (sklearn.svm.SVC): trained model
+        X: test set features
+        y: test set labels
+        n_splits (int): number of splits for cross-validation
+    Returns:
+        metrics (dict): dictionary containing accuracy, ROC AUC and confusion matrix metrics
+    """
+    skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
+    accuracies = []
+    roc_aucs = []
+    for train_index, test_index in skf.split(X, y):
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        model.fit(X_train, y_train)
+        predictions = model.predict_proba(X_test)[:, 1]
+        df = pd.DataFrame()
+        df["pred"] = predictions
+        df["label"] = y_test
+        df["pred"] = df["pred"].apply(lambda x: 1 if x > 0.5 else 0)
+        accuracy = df[df["pred"] == df["label"]].shape[0] / df.shape[0]
+        accuracies.append(accuracy)
+        try:
+            roc_auc = roc_auc_score(df["label"], df["pred"])
+        except ValueError:
+            print(
+                "ROC AUC score could not be calculated. Only one class present in the test set."
+            )
+            roc_auc = 0
+        roc_aucs.append(roc_auc)
+
+    metrics = {
+        "accuracy": round(np.mean(accuracies), 4),
+        "roc_auc": round(np.mean(roc_aucs), 4),
+    }
+    return metrics
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
