@@ -3,58 +3,50 @@ import re
 import numpy as np
 
 
-class SELFIESVectorizer:
-    def __init__(self, pad_to_len=None, alphabet_path="data/selfies_alphabet.txt"):
-        """
-        SELFIES vectorizer
-        Args:
-            pad_to_len (int):size of the padding
-        """
+class Vectorizer:
+    def __init__(self, pad_to_len=None, alphabet_path=None):
+        self.pad_to_len = pad_to_len
         self.alphabet = self.read_alphabet(alphabet_path)
         self.char2idx = {s: i for i, s in enumerate(self.alphabet)}
         self.idx2char = {i: s for i, s in enumerate(self.alphabet)}
-        self.pad_to_len = pad_to_len
 
-    def vectorize(self, selfie, no_special=False):
+    def vectorize(self, sequence):
         """
-        Vectorize a list of SELFIES strings to a numpy array of shape (len(selfies), len(charset))
+        Vectorize a list of strings to a numpy array of shape (len(sequence), len(charset))
         Args:
-            selfie (string):list of SELFIES strings
-            no_special (bool):remove special tokens
+            sequence (string):list of strings
         Returns:
-            X (numpy.ndarray): vectorized SELFIES strings
+            X (numpy.ndarray): vectorized strings
         """
-        if no_special:
-            splited = self.split(selfie)
-        elif self.pad_to_len is None:
-            splited = ["[start]"] + self.split(selfie) + ["[end]"]
+        if self.pad_to_len is None:
+            splited = self.split(sequence)
         else:
             splited = (
                 ["[start]"]
-                + self.split(selfie)
+                + self.split(sequence)
                 + ["[end]"]
-                + ["[nop]"] * (self.pad_to_len - len(self.split(selfie)) - 2)
+                + ["[nop]"] * (self.pad_to_len - len(self.split(sequence)) - 2)
             )
         X = np.zeros((len(splited), len(self.alphabet)))
         for i in range(len(splited)):
             if splited[i] not in self.alphabet:
                 raise ValueError(
-                    f"Invalid SELFIES token: {splited[i]} allowed tokens: {self.alphabet}"
+                    f"Invalid token: {splited[i]} allowed tokens: {self.alphabet}"
                 )
             X[i, self.char2idx[splited[i]]] = 1
         return X
 
     def devectorize(self, ohe, remove_special=False, reduction="max"):
         """
-        Devectorize a numpy array of shape (len(selfies), len(charset)) to a SELFIES string
+        Devectorize a numpy array of shape (len(sequence), len(charset)) to a string
         Args:
             ohe (numpy.ndarray): one-hot encoded sequence as numpy array
             remove_special (bool): remove special tokens
             reduction (string): reduction method, either 'max' or 'sample'
         Returns:
-            selfie_str (string): SELFIES string
+            sequence_str (string): string
         """
-        selfie_str = ""
+        sequence_str = ""
         for j in range(ohe.shape[0]):
             if reduction == "max":
                 idx = np.argmax(ohe[j, :])
@@ -68,20 +60,12 @@ class SELFIESVectorizer:
                 or self.idx2char[idx] == "[nop]"
             ):
                 continue
-            selfie_str += self.idx2char[idx]
-        return selfie_str
+            sequence_str += self.idx2char[idx]
+        return sequence_str
 
-    def idxize(self, selfie, no_special=False):
+    def idxize(self, sequence, no_special=False):
         if no_special:
-            splited = self.split(selfie)
-        else:
-            splited = (
-                ["[start]"]
-                + self.split(selfie)
-                + ["[end]"]
-                + ["[nop]"] * (self.pad_to_len - len(self.split(selfie)) - 2)
-            )
-        return np.array([self.char2idx[s] for s in splited])
+            splited = self.split(sequence)
 
     def deidxize(self, idx, no_special=False):
         if no_special:
@@ -96,10 +80,7 @@ class SELFIESVectorizer:
 
     @staticmethod
     def split(selfie):
-        pattern = r"(\[[^\[\]]*\])"
-        return re.findall(pattern, selfie)
-
-    # Read alphabet of permitted SELFIES tokens from file
+        raise NotImplementedError
 
     @staticmethod
     def read_alphabet(path):
@@ -108,15 +89,49 @@ class SELFIESVectorizer:
         return alphabet
 
 
-class SMILESVectorizer(SELFIESVectorizer):
+class SELFIESVectorizer(Vectorizer):
+    """
+    Vectorizer for SELFIES strings.
+    """
+
+    def __init__(self, pad_to_len=None, alphabet_path="data/selfies_alphabet.txt"):
+        Vectorizer.__init__(self, pad_to_len, alphabet_path)
+
+    @staticmethod
+    def split(selfie):
+        pattern = r"(\[[^\[\]]*\])"
+        return re.findall(pattern, selfie)
+
+
+class SMILESVectorizer(Vectorizer):
+    """
+    Vectorizer for SMILES strings.
+    """
+
     def __init__(self, pad_to_len=None, alphabet_path="data/smiles_alphabet.txt"):
-        SELFIESVectorizer.__init__(self, pad_to_len)
-        self.alphabet = self.read_alphabet(alphabet_path)
-        self.char2idx = {s: i for i, s in enumerate(self.alphabet)}
-        self.idx2char = {i: s for i, s in enumerate(self.alphabet)}
-        self.pad_to_len = pad_to_len
+        Vectorizer.__init__(self, pad_to_len, alphabet_path)
 
     @staticmethod
     def split(smile):
-        pattern = r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])"
+        pattern = (
+            r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
+            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])"
+        )
         return re.findall(pattern, smile)
+
+
+class DeepSMILESVectorizer(Vectorizer):
+    """
+    Vectorizer for DeepSMILES strings.
+    """
+
+    def __init__(self, pad_to_len=None, alphabet_path="data/deepsmiles_alphabet.txt"):
+        Vectorizer.__init__(self, pad_to_len, alphabet_path)
+
+    @staticmethod
+    def split(deepsmile):
+        pattern = (
+            r"(\%\([0-9]{3}\)|\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\||\(|\)|\.|=|#|-|\+|\\|\/|:|~|@|\?|>>?|"
+            r"\*|\$|\%[0-9]{2}|[0-9]|[start]|[nop]|[end])"
+        )
+        return re.findall(pattern, deepsmile)

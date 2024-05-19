@@ -7,10 +7,15 @@ import rdkit.Chem.AllChem as AllChem
 import selfies as sf
 import numpy as np
 import torch
+import deepsmiles as ds
 
 from profis.gen.loss import CCE
 from profis.utils.annealing import Annealer
-from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer
+from profis.utils.vectorizer import (
+    SELFIESVectorizer,
+    SMILESVectorizer,
+    DeepSMILESVectorizer,
+)
 
 
 def train(config, model, train_loader, val_loader, scoring_loader):
@@ -31,9 +36,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     annealing_shape = str(config["RUN"]["annealing_shape"])
     data_path = str(config["RUN"]["data_path"])
     fp_type = data_path.split("_")[-1].split(".")[0]
-    use_selfies = config.getboolean("RUN", "use_selfies")
-
-    config_dict = {s: dict(config.items(s)) for s in config.sections()}
+    out_encoding = str(config["RUN"]["out_encoding"])
 
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
 
@@ -54,7 +57,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
 
     # Define loss function and optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
-    criterion = CCE(notation="SELFIES" if use_selfies else "SMILES")
+    criterion = CCE(notation=out_encoding)
 
     print("Starting Training of GRU")
     print(f"Device: {device}")
@@ -88,10 +91,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         if epoch % 10 == 0:
             start = time.time()
             mean_qed, mean_fp_recon, mean_validity = get_scores(
-                model,
-                scoring_loader,
-                fp_type=fp_type,
-                format="selfies" if use_selfies else "smiles",
+                model, scoring_loader, fp_type=fp_type, format=out_encoding
             )
             end = time.time()
             print(f"QED + fp evaluated in {(end - start) / 60} minutes")
@@ -158,7 +158,8 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
     Args:
         model (nn.Module): EncoderDecoderV3 model
         scoring_loader (DataLoader): scoring set loader
-
+        fp_type (str): fingerprint type, either "ECFP" or "KRFP"
+        format (str): input format, must be "selfies", "smiles" or "deepsmiles"
     Returns:
         mean_qed (float): average QED score
         mean_fp_recon (float): average FP reconstruction score
@@ -167,8 +168,13 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if format == "selfies":
         vectorizer = SELFIESVectorizer(pad_to_len=128)
-    else:
+    elif format == "deepsmiles":
+        vectorizer = DeepSMILESVectorizer(pad_to_len=128)
+    elif format == "smiles":
         vectorizer = SMILESVectorizer(pad_to_len=128)
+    else:
+        raise ValueError("Invalid format, must be 'selfies', 'smiles' or 'deepsmiles'")
+
     model.eval()
     with torch.no_grad():
         mean_qed = 0
@@ -184,6 +190,9 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             ]
             if format == "selfies":
                 smiles_list = [sf.decoder(x) for x in seq_list]
+            elif format == "deepsmiles":
+                converter = ds.Converter(rings=True, branches=True)
+                smiles_list = [converter.decode(x) for x in seq_list]
             else:
                 smiles_list = seq_list
 
