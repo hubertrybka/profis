@@ -6,15 +6,14 @@ import time
 
 import numpy as np
 import pandas as pd
-import sklearn.model_selection
 import torch
 import torch.utils.data as D
-from sklearn.metrics import roc_auc_score, confusion_matrix
 from sklearn.svm import SVC
 
 from profis.gen.dataset import LatentEncoderDataset
 from profis.gen.generator import EncoderDecoderV3
 from profis.utils.modelinit import initialize_model
+from profis.clf.model_selection import cross_evaluate, grid_search
 
 
 def main(config_path, verbose=True):
@@ -37,6 +36,7 @@ def main(config_path, verbose=True):
     gamma = str(config["SVC"]["gamma"])
     use_cuda = config.getboolean("SVC", "use_cuda")
     name = str(config["SVC"]["name"])
+    optimize = config.getboolean("SVC", "optimize_hyperparameters")
 
     start_time = time.time()
 
@@ -72,15 +72,16 @@ def main(config_path, verbose=True):
     data = pd.DataFrame(mus)
     data["activity"] = activity
     data.reset_index(drop=True, inplace=True)
+    X = data.drop("activity", axis=1).values
+    y = data["activity"].values
 
-    # split into train and test set
+    if out_path is None or not os.path.exists(f"{out_path}"):
+        out_path = "models"
 
-    train, test = sklearn.model_selection.train_test_split(
-        data, test_size=0.1, random_state=42
-    )
+    if not os.path.exists(f"{out_path}/{name}"):
+        os.mkdir(f"{out_path}/{name}")
 
-    # train SVM
-
+    # initialize model
     SV_params = {
         "C": c_param,
         "kernel": kernel,
@@ -92,30 +93,34 @@ def main(config_path, verbose=True):
 
     svc = SVC(**SV_params)
 
-    train_X = train.drop("activity", axis=1)
-    train_y = train["activity"]
-    test_X = test.drop("activity", axis=1)
-    test_y = test["activity"]
-    print("Training set size:", train_X.shape[0]) if verbose else None
-    print("Test set size:", test_X.shape[0]) if verbose else None
+    # optimize hyperparameters
+    if optimize:
+        print("Optimizing hyperparameters...") if verbose else None
+        param_grid = [
+            {'C': [0.1, 1, 10, 100, 1000], 'kernel': ['linear']},
+            {'C': [0.1, 1, 10, 100, 1000], 'gamma': [0.001, 0.0001, 'scale'], 'kernel': ['rbf']},
+        ]
+        best_params, cv_results = grid_search(svc, X, y, param_grid, n_splits=10, n_jobs=-1, scoring="roc_auc",
+                                              verbose=verbose)
+        svc = SVC(**best_params)
+        cv_results_df = pd.DataFrame(cv_results)
+        cv_results_df.to_csv(f"{out_path}/{name}/cv_results.csv", index=False)
+        print(f"CV grid search results saved to {out_path}/{name}/cv_results.csv") if verbose else None
 
-    print("Training...") if verbose else None
-    svc.fit(train_X, train_y)
+    # train model
+
+    print("Training SVC...") if verbose else None
+    svc.fit(X, y)
 
     # save model
 
-    if out_path is None or not os.path.exists(f"{out_path}"):
-        out_path = "models"
-
-    if not os.path.exists(f"{out_path}/{name}"):
-        os.mkdir(f"{out_path}/{name}")
     with open(f"./{out_path}/{name}/clf.pkl", "wb") as file:
         pickle.dump(svc, file)
 
     # evaluate
 
     print("Evaluating...") if verbose else None
-    metrics = evaluate(svc, test_X, test_y)
+    metrics = cross_evaluate(svc, X, y)
 
     metrics_df = pd.DataFrame(metrics, index=[0])
     metrics_df.to_csv(f"{out_path}/{name}/metrics.csv", index=False)
@@ -159,88 +164,6 @@ def encode(df, model, device):
         mus = np.concatenate(mus, axis=0)
         logvars = np.concatenate(logvars, axis=0)
     return mus, logvars
-
-
-def evaluate(model, test_X, test_y):
-    """
-    Evaluates the SVC model performance on the test set.
-    Args:
-        model (sklearn.svm.SVC): trained model
-        test_X: test set features
-        test_y: test set labels
-    Returns:
-        metrics (dict): dictionary containing accuracy, ROC AUC and confusion matrix metrics
-    """
-    predictions = model.predict_proba(test_X)[:, 1]
-    df = pd.DataFrame()
-    df["pred"] = predictions
-    df["label"] = test_y.values
-    df["pred"] = df["pred"].apply(lambda x: 1 if x > 0.5 else 0)
-    accuracy = df[df["pred"] == df["label"]].shape[0] / df.shape[0]
-    try:
-        roc_auc = roc_auc_score(df["label"], df["pred"])
-    except ValueError:
-        print(
-            "ROC AUC score could not be calculated. Only one class present in the test set."
-        )
-        roc_auc = 0
-    try:
-        tn, fp, fn, tp = confusion_matrix(df["label"], df["pred"]).ravel()
-    except ValueError:
-        print(
-            "Confusion matrix could not be calculated. Only one class present in the test set."
-        )
-        tn, fp, fn, tp = 0, 0, 0, 0
-    metrics = {
-        "accuracy": round(accuracy, 4),
-        "roc_auc": round(roc_auc, 4),
-        "true_positive": round(tp / df.shape[0], 4),
-        "true_negative": round(tn / df.shape[0], 4),
-        "false_positive": round(fp / df.shape[0], 4),
-        "false_negative": round(fn / df.shape[0], 4),
-    }
-    return metrics
-
-
-def cross_evaluate(model, X, y, n_splits=5):
-    """
-    Cross-evaluates the SVC model performance on the training set.
-    Args:
-        model (sklearn.svm.SVC): trained model
-        X: test set features
-        y: test set labels
-        n_splits (int): number of splits for cross-validation
-    Returns:
-        metrics (dict): dictionary containing accuracy, ROC AUC and confusion matrix metrics
-    """
-    skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
-    accuracies = []
-    roc_aucs = []
-    for train_index, test_index in skf.split(X, y):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-        model.fit(X_train, y_train)
-        predictions = model.predict_proba(X_test)[:, 1]
-        df = pd.DataFrame()
-        df["pred"] = predictions
-        df["label"] = y_test
-        df["pred"] = df["pred"].apply(lambda x: 1 if x > 0.5 else 0)
-        accuracy = df[df["pred"] == df["label"]].shape[0] / df.shape[0]
-        accuracies.append(accuracy)
-        try:
-            roc_auc = roc_auc_score(df["label"], df["pred"])
-        except ValueError:
-            print(
-                "ROC AUC score could not be calculated. Only one class present in the test set."
-            )
-            roc_auc = 0
-        roc_aucs.append(roc_auc)
-
-    metrics = {
-        "accuracy": round(np.mean(accuracies), 4),
-        "roc_auc": round(np.mean(roc_aucs), 4),
-    }
-    return metrics
 
 
 if __name__ == "__main__":
