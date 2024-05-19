@@ -19,15 +19,15 @@ class VAEEncoder(nn.Module):
     """
 
     def __init__(
-        self,
-        input_size,
-        output_size,
-        fc1_size,
-        fc2_size,
-        fc3_size,
-        activation="relu",
-        fc2_enabled=True,
-        fc3_enabled=True,
+            self,
+            input_size,
+            output_size,
+            fc1_size,
+            fc2_size,
+            fc3_size,
+            activation="relu",
+            fc2_enabled=True,
+            fc3_enabled=True,
     ):
         super(VAEEncoder, self).__init__()
         self.fc1 = nn.Linear(input_size, fc1_size)
@@ -102,15 +102,15 @@ class GRUDecoder(nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_size,
-        num_layers,
-        output_size,
-        dropout,
-        input_size,
-        encoding_size,
-        teacher_ratio,
-        device,
+            self,
+            hidden_size,
+            num_layers,
+            output_size,
+            dropout,
+            input_size,
+            encoding_size,
+            teacher_ratio,
+            device,
     ):
         super(GRUDecoder, self).__init__()
 
@@ -176,14 +176,77 @@ class GRUDecoder(nn.Module):
             out = self.softmax(out)
             random_float = random.random()
             if (
-                teacher_forcing
-                and random_float < self.teacher_ratio
-                and y_true is not None
+                    teacher_forcing
+                    and random_float < self.teacher_ratio
+                    and y_true is not None
             ):
                 out = y_true[:, n, :].unsqueeze(1)  # shape (batch_size, 1, 31)
             x = out
         out_cat = torch.cat(outputs, dim=1)
         return out_cat
+
+
+class LSTMDecoder(nn.Module):
+    """
+    Decoder class based on LSTM.
+
+    Parameters:
+        hidden_size (int): LSTM hidden size
+        num_layers (int): LSTM number of layers
+        output_size (int): LSTM output size (alphabet size)
+        dropout (float): LSTM dropout
+    """
+
+    def __init__(
+            self,
+            hidden_size,
+            num_layers,
+            output_size,
+            dropout,
+            input_size,
+            encoding_size,
+            teacher_ratio,
+            device,
+    ):
+        super(LSTMDecoder, self).__init__()
+
+        # LSTM parameters
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.dropout = dropout
+        self.input_size = input_size
+        self.device = device
+        self.teacher_ratio = teacher_ratio
+        self.encoding_size = encoding_size
+        self.output_size = output_size
+
+        # start token initialization
+        self.start_ohe = torch.zeros(output_size, dtype=torch.float32)
+        self.start_ohe[output_size - 1] = 1.0  # start token
+
+        # pytorch.nn
+        self.lstm = nn.LSTM(
+            input_size=self.input_size,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            dropout=self.dropout if self.num_layers > 1 else 0.0,
+            batch_first=True,
+        )
+        self.fc1 = nn.Linear(self.encoding_size, self.hidden_size)
+        self.fc2 = nn.Linear(self.hidden_size, self.output_size)
+        self.softmax = nn.Softmax(dim=2)
+
+    def forward(self, latent_vector, y_true=None, teacher_forcing=False):
+        """
+        Args:
+            latent_vector (torch.tensor): latent vector of size [batch_size, encoding_size]
+            y_true (torch.tensor): batched SELFIES of target molecules
+            teacher_forcing: (bool): whether to use teacher forcing (training only)
+
+        Returns:
+            out (torch.tensor): LSTM output of size [batch_size, seq_len, alphabet_size]
+        """
+        # TODO: Implement LSTM decoder
 
 
 class EncoderDecoderV3(nn.Module):
@@ -210,22 +273,22 @@ class EncoderDecoderV3(nn.Module):
     """
 
     def __init__(
-        self,
-        fp_size,
-        encoding_size,
-        hidden_size,
-        num_layers,
-        output_size,
-        dropout,
-        teacher_ratio,
-        random_seed=42,
-        use_cuda=True,
-        fc1_size=2048,
-        fc2_size=1024,
-        fc3_size=512,
-        encoder_activation="relu",
-        fc2_enabled=True,
-        fc3_enabled=True,
+            self,
+            fp_size,
+            encoding_size,
+            hidden_size,
+            num_layers,
+            output_size,
+            dropout,
+            teacher_ratio,
+            random_seed=42,
+            use_cuda=True,
+            fc1_size=2048,
+            fc2_size=1024,
+            fc3_size=512,
+            encoder_activation="relu",
+            fc2_enabled=True,
+            fc3_enabled=True,
     ):
         super(EncoderDecoderV3, self).__init__()
         self.fp_size = fp_size
