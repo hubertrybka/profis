@@ -19,7 +19,10 @@ from profis.utils.modelinit import initialize_model
 
 def main(config_path, verbose=True):
     """
-    Trains an SVM classifier on the latent space of the model.
+    Trains an SVM classifier on the latent embeddings of the known ligands.
+    Args:
+        config_path (str): path to the config file
+        verbose (bool): whether to print the progress
     """
 
     # read config file
@@ -51,7 +54,7 @@ def main(config_path, verbose=True):
     # load model
 
     split = model_path.split("/")
-    config_path = "/".join(split[:-1]) + '/hyperparameters.ini'
+    config_path = "/".join(split[:-1]) + "/hyperparameters.ini"
 
     if not os.path.exists(config_path):
         raise ValueError(f"Model config file {config_path} not found")
@@ -96,7 +99,7 @@ def main(config_path, verbose=True):
     print("Training set size:", train_X.shape[0]) if verbose else None
     print("Test set size:", test_X.shape[0]) if verbose else None
 
-    print("Training...")if verbose else None
+    print("Training...") if verbose else None
     svc.fit(train_X, train_y)
 
     # save model
@@ -159,6 +162,15 @@ def encode(df, model, device):
 
 
 def evaluate(model, test_X, test_y):
+    """
+    Evaluates the SVC model performance on the test set.
+    Args:
+        model (sklearn.svm.SVC): trained model
+        test_X: test set features
+        test_y: test set labels
+    Returns:
+        metrics (dict): dictionary containing accuracy, ROC AUC and confusion matrix metrics
+    """
     predictions = model.predict_proba(test_X)[:, 1]
     df = pd.DataFrame()
     df["pred"] = predictions
@@ -168,12 +180,16 @@ def evaluate(model, test_X, test_y):
     try:
         roc_auc = roc_auc_score(df["label"], df["pred"])
     except ValueError:
-        print('ROC AUC score could not be calculated. Only one class present in the test set.')
+        print(
+            "ROC AUC score could not be calculated. Only one class present in the test set."
+        )
         roc_auc = 0
     try:
         tn, fp, fn, tp = confusion_matrix(df["label"], df["pred"]).ravel()
     except ValueError:
-        print('Confusion matrix could not be calculated. Only one class present in the test set.')
+        print(
+            "Confusion matrix could not be calculated. Only one class present in the test set."
+        )
         tn, fp, fn, tp = 0, 0, 0, 0
     metrics = {
         "accuracy": round(accuracy, 4),
@@ -182,6 +198,47 @@ def evaluate(model, test_X, test_y):
         "true_negative": round(tn / df.shape[0], 4),
         "false_positive": round(fp / df.shape[0], 4),
         "false_negative": round(fn / df.shape[0], 4),
+    }
+    return metrics
+
+
+def cross_evaluate(model, X, y, n_splits=5):
+    """
+    Cross-evaluates the SVC model performance on the training set.
+    Args:
+        model (sklearn.svm.SVC): trained model
+        X: test set features
+        y: test set labels
+        n_splits (int): number of splits for cross-validation
+    Returns:
+        metrics (dict): dictionary containing accuracy, ROC AUC and confusion matrix metrics
+    """
+    skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
+    accuracies = []
+    roc_aucs = []
+    for train_index, test_index in skf.split(X, y):
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        model.fit(X_train, y_train)
+        predictions = model.predict_proba(X_test)[:, 1]
+        df = pd.DataFrame()
+        df["pred"] = predictions
+        df["label"] = y_test
+        df["pred"] = df["pred"].apply(lambda x: 1 if x > 0.5 else 0)
+        accuracy = df[df["pred"] == df["label"]].shape[0] / df.shape[0]
+        accuracies.append(accuracy)
+        try:
+            roc_auc = roc_auc_score(df["label"], df["pred"])
+        except ValueError:
+            print(
+                "ROC AUC score could not be calculated. Only one class present in the test set."
+            )
+            roc_auc = 0
+        roc_aucs.append(roc_auc)
+
+    metrics = {
+        "accuracy": round(np.mean(accuracies), 4),
+        "roc_auc": round(np.mean(roc_aucs), 4),
     }
     return metrics
 

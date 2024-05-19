@@ -14,11 +14,9 @@ from profis.utils.modelinit import initialize_model
 
 def main(config_path):
     """
-    Predicting molecules using the trained model.
-
+    Generates structure predictions for the latent embeddings of molecular fingerprints.
     Args:
         config_path: Path to the config file.
-    Returns: None
     """
 
     start_time = time.time()
@@ -43,7 +41,7 @@ def main(config_path):
     model_config_path = model_path.replace(model_epoch, "hyperparameters.ini")
     parser = configparser.ConfigParser(allow_no_value=True)
     parser.read(model_config_path)
-    use_selfies = parser["RUN"].getboolean("use_selfies")
+    out_encoding = parser["RUN"]["out_encoding"]
     if not os.path.exists(model_config_path):
         raise ValueError(f"Model config file {model_config_path} not found")
 
@@ -70,7 +68,7 @@ def main(config_path):
     # get predictions
     print(f"Getting predictions for file {file_path}...") if verbosity > 1 else None
     df = predict(
-        model, input_vector, device=device, use_selfies=use_selfies, batch_size=512
+        model, input_vector, device=device, format=out_encoding, batch_size=512
     )
 
     # filter dataframe
@@ -102,6 +100,8 @@ def main(config_path):
 
     time_elapsed = time.time() - start_time
     print(f"{file_path} processed in {(time_elapsed / 60):.2f} minutes")
+
+    return
 
 
 if __name__ == "__main__":

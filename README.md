@@ -9,17 +9,23 @@ Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
    * [General info](#general-info)
    * [Setup](#setup)
-   * [Usage](#usage)
+   * [Basic usage](#basic-usage)
+   * [Advanced usage](#advanced-usage)
+   * [Dependencies](#dependencies)
 
 
 ## General info
 
-PROFIS is a generative model which allows for the design of target-focused compound libraries by probing continuous 
-fingerprint space with RNNs. PROFIS is a VAE that encodes molecular FPs and decodes molecule structures 
-in a sequential notation so that the resulting compounds match the initial FP description. In the task of generating 
+PROFIS is a generative model that allows for the design of target-focused compound libraries by **pro**bing continuous 
+**fi**ngerprint **s**pace with RNNs in a reverse QSAR-type task. PROFIS is a VAE that encodes molecular FPs and decodes molecule structures 
+in a sequential notation so that the resulting compounds match the initial FP description. In the process of generating 
 potential novel ligands, PROFIS employs a Bayesian search algorithm to explore the space of embedded molecular fingerprints 
 and identify subspaces that correspond to the known binders. Because many FPs do not determine the full chemical structure, 
 our method can generate a diverse set of molecules that match the FP description.
+
+<p align="center">
+   <img src="https://github.com/hubertrybka/profis/blob/main/figures/architecture.png" width="600">
+</p>
 
 ## Setup
 
@@ -58,17 +64,14 @@ pandas.DataFrame object. The dataframe must contain the following columns:
 
 * 'smiles' - SMILES strings of known ligands in canonical format.
 
-* 'fps' - Klekota&Roth or Morgan (radius=2, nBits=2048) fingerprints of the ligands.  
-  The fingerprints have to be saved as ordinary python lists, in **dense format** (a list of ints designating the indices
-  of **active bits** in the original fingerprint).
-  For a Python function to convert sparse molecular fingerprints into dense format, see src.utils.finger.sparse2dense.
+* 'fps' (optional) - Molecular fingerprints of the ligands. **This column is optional, as later you will be able to generate those from SMILES**.
+  The fingerprints have to be saved as ordinary python lists, in dense format (a list of ints designating the indices
+  of active bits in the original fingerprint).
 
 * 'activity' - Activity class (True, False). By default, we define active compounds as those having
   Ki value <= 100nM and inactive as those of Ki > 100nM.
 
 Save dataframe to .parquet file in the previously created directory:
-
-#
 
 ```
 import pandas as pd
@@ -79,20 +82,32 @@ df = pd.DataFrame(columns=['smiles', 'fps', 'activity'])
 df.to_parquet('my_results/my_dataset.parquet', index=False)
 ```
 
+You then have to preprocess the data using:
+
+      python prepare_dataset.py
+
+This script takes the following arguments:
+```
+--data_path PATH      Path to the dataset in .parquet format
+--gen_ecfp            Flag to generate ECFP fingerprints
+--gen_krfp            Flag to Generate KRFP fingerprints
+--to_dense            Flag to only convert sparse fingerprints in 'fps' column to dense format
+```
+
 ### Train the SVC activity predictor:
 
-In config_files/SVC_config.ini, provide the path to the dataset file (data_path) and the path to the trained RNN model.
-The model weights are available in the `models` directory, if previously downloaded with `./get_data`. 
+In config_files/SVC_config.ini, provide the path to the preprocessed dataset file (data_path) and the path to the trained RNN model.
+The model weights are available in the `models` directory if previously downloaded with `./get_data`. 
 The path to the RNN weights should look like this:
 
-    models/SMILES_KRFP/model.pt
+      models/SMILES_KRFP/model.pt
 
-Please provide the name of the previously created directory and name for the model in appropriate rubrics. 
+Please provide the name of the previously created directory and the name of the model in the appropriate rubrics. 
 Other parameters can be set according to needs.
 
 Now, you can train the SVC activity predictor by running:
     
-        python train_clf.py
+      python train_clf.py
 
 For more info on the SVC classifier, please refer
 to [scikit-learn SVC documentation](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html).
@@ -102,7 +117,7 @@ and save the path to a model.pkl file created by the training script inside.
 
 It should look like this:
 
-    my_results/SVC/model.pkl
+      my_results/my_SVC/model.pkl
 
 ### Perform bayesian search on the latent space
 
@@ -113,7 +128,7 @@ Other parameters can be set according to needs.
 
 To perform bayesian search on the latent space, use the following command:
 
-    python bayesian_search.py
+      python bayesian_search.py
 
 For more info about the bayesian optimization process and the choice of non-default parameters refer to
 [bayesian-optimization README](https://github.com/bayesian-optimization/BayesianOptimization).
@@ -129,13 +144,13 @@ files:
 
 The generated compounds are filtered according to criteria that can be modified in `config_files/pred_config.ini`.
 
-In order to generate a library, run
+To generate a library of ligands, run
 
       python predict.py
 
 Other parameters and filter criteria can be set according to needs.
 
-As a result, in my_dir/mySVC, a new directory latent_vectors{timestamp} will be created. It contains the
+As a result, in my_results/my_SVC, a new directory latent_vectors{timestamp} will be created. It contains the
 following files:
 
 * predictions.csv, a file containing SMILES of the generated compounds, as well as some calculated molecular properties
@@ -154,7 +169,7 @@ batch downloaded using `get_data.sh`.
 
 If you intend to train the RNN, use the following command:
 
-    python train_RNN.py
+      python train_RNN.py
 
 Be sure to edit the config file in advance (config_files/RNN_config.ini) to set the desired parameters.
 In particular, you should provide a path to the RNN dataset file. This will be `data/RNN_dataset_KRFP.parquet`

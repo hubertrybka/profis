@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 class ClfDataset(Dataset):
     """
     Dataset for the discriminator model
-    Args:
+    Parameters:
         mu_path (str): path to the mu parquet file containing the mu values and activity labels in 'label' column
         logvar_path (str): path to the logvar parquet file
     """

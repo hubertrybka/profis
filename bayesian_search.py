@@ -28,8 +28,6 @@ def search(config_path, return_list):
     Args:
         config_path: path to the config file
         return_list: list to append results to (multiprocessing)
-    Returns:
-        None
     """
 
     # read config file
@@ -45,7 +43,7 @@ def search(config_path, return_list):
 
     # initialize scorer
     latent_size = latent_size
-    scorer = SKLearnScorer(model_path, penalize=False)
+    scorer = SKLearnScorer(model_path)
 
     # define bounds
     pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
@@ -56,7 +54,7 @@ def search(config_path, return_list):
     optimizer = BayesianOptimization(
         f=scorer,
         pbounds=pbounds,
-        random_state=(time.time_ns() % 10**6),
+        random_state=(time.time_ns() % 10 ** 6),
         verbose=verbosity > 1,
         bounds_transformer=bounds_transformer,
     )
@@ -82,7 +80,7 @@ def search(config_path, return_list):
     samples["score"] = samples["score"].astype(float)
     samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
     return_list.append(samples)
-    return None
+    return
 
 
 if __name__ == "__main__":
@@ -114,7 +112,7 @@ if __name__ == "__main__":
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     dirname = "latent_vectors" + timestamp if add_timestamp else "latent_vectors"
-    output_path = ''.join(model_path.split("/")[:-1])
+    output_path = "".join(model_path.split("/")[:-1])
     os.mkdir(output_path) if not os.path.isdir(output_path) else None
     (
         os.mkdir(f"{output_path}/{dirname}")
