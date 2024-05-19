@@ -119,7 +119,7 @@ def smiles2sparse_ECFP(smiles, n_bits=1024):
     Args:
         smiles (str): SMILES string
         n_bits (int): number of bits in the fingerprint
-    Retu=rns:
+    Returns:
         np.array: sparse fingerprint
     """
     mol = Chem.MolFromSmiles(smiles)
