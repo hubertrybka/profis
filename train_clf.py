@@ -243,7 +243,6 @@ def cross_evaluate(model, X, y, n_splits=5):
     return metrics
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(

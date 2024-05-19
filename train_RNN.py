@@ -11,7 +11,11 @@ from profis.gen.dataset import SELFIESDataset, SMILESDataset, DeepSMILESDataset
 from profis.gen.train import train
 from profis.utils.split import scaffold_split
 from profis.utils.modelinit import initialize_model
-from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer, DeepSMILESVectorizer
+from profis.utils.vectorizer import (
+    SELFIESVectorizer,
+    SMILESVectorizer,
+    DeepSMILESVectorizer,
+)
 
 
 def main(config_path):
@@ -95,7 +99,9 @@ def main(config_path):
         val_dataset = DeepSMILESDataset(val_df, vectorizer, fp_len)
         scoring_dataset = DeepSMILESDataset(scoring_df, vectorizer, fp_len)
     else:
-        raise ValueError("Invalid output encoding (must be selfies, smiles or deepsmiles)")
+        raise ValueError(
+            "Invalid output encoding (must be selfies, smiles or deepsmiles)"
+        )
 
     print("Dataset size:", len(dataset))
     print("Train size:", len(train_dataset))

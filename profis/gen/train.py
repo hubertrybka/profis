@@ -11,7 +11,11 @@ import deepsmiles as ds
 
 from profis.gen.loss import CCE
 from profis.utils.annealing import Annealer
-from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer, DeepSMILESVectorizer
+from profis.utils.vectorizer import (
+    SELFIESVectorizer,
+    SMILESVectorizer,
+    DeepSMILESVectorizer,
+)
 
 
 def train(config, model, train_loader, val_loader, scoring_loader):
@@ -87,10 +91,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         if epoch % 10 == 0:
             start = time.time()
             mean_qed, mean_fp_recon, mean_validity = get_scores(
-                model,
-                scoring_loader,
-                fp_type=fp_type,
-                format=out_encoding
+                model, scoring_loader, fp_type=fp_type, format=out_encoding
             )
             end = time.time()
             print(f"QED + fp evaluated in {(end - start) / 60} minutes")

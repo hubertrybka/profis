@@ -8,14 +8,18 @@ from rdkit import Chem
 from rdkit.Chem import QED, rdMolDescriptors
 from torch.utils.data import DataLoader
 
-from profis.utils.vectorizer import SELFIESVectorizer, SMILESVectorizer, DeepSMILESVectorizer
+from profis.utils.vectorizer import (
+    SELFIESVectorizer,
+    SMILESVectorizer,
+    DeepSMILESVectorizer,
+)
 
 
 def predict(
     model,
     latent_vectors: np.array,
     device: torch.device = torch.device("cpu"),
-    format: str = 'smiles',
+    format: str = "smiles",
     batch_size: int = 512,
 ):
     """
@@ -30,14 +34,16 @@ def predict(
     Returns:
         pd.DataFrame: Dataframe containing smiles and scores.
     """
-    if format == 'selfies':
+    if format == "selfies":
         vectorizer = SELFIESVectorizer(pad_to_len=128)
-    elif format == 'smiles':
+    elif format == "smiles":
         vectorizer = SMILESVectorizer(pad_to_len=128)
-    elif format == 'deepsmiles':
+    elif format == "deepsmiles":
         vectorizer = DeepSMILESVectorizer(pad_to_len=128)
     else:
-        raise ValueError(f"Invalid format. Must be 'smiles', 'selfies' or 'deepsmiles'.")
+        raise ValueError(
+            f"Invalid format. Must be 'smiles', 'selfies' or 'deepsmiles'."
+        )
 
     device = torch.device(device)
 
@@ -54,18 +60,18 @@ def predict(
             preds_list.append(preds)
         preds_concat = np.concatenate(preds_list)
 
-        if format == 'selfies':
+        if format == "selfies":
             df["selfies"] = [
                 vectorizer.devectorize(pred, remove_special=True)
                 for pred in preds_concat
             ]
             df["smiles"] = df["selfies"].apply(sf.decoder)
-        elif format == 'smiles':
+        elif format == "smiles":
             df["smiles"] = [
                 vectorizer.devectorize(pred, remove_special=True)
                 for pred in preds_concat
             ]
-        elif format == 'deepsmiles':
+        elif format == "deepsmiles":
             converter = ds.Converter(rings=True, branches=True)
             df["deepsmiles"] = [
                 vectorizer.devectorize(pred, remove_special=True)
