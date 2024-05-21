@@ -77,12 +77,14 @@ def cross_evaluate(model, X, y, n_splits=10):
         "accuracy": round(np.mean(accuracies), 4),
         "accuracy_std": round(np.std(accuracies), 4),
         "roc_auc": round(np.mean(roc_aucs), 4),
-        "roc_auc_std": round(np.std(roc_aucs), 4)
+        "roc_auc_std": round(np.std(roc_aucs), 4),
     }
     return metrics
 
 
-def grid_search(model, X, y, param_grid, n_splits=10, n_jobs=-1, scoring="roc_auc", verbose=False):
+def grid_search(
+    model, X, y, param_grid, n_splits=10, n_jobs=-1, scoring="roc_auc", verbose=False
+):
     """
     Grid search for the best hyperparameters of the SVC model.
     Args:
@@ -99,7 +101,12 @@ def grid_search(model, X, y, param_grid, n_splits=10, n_jobs=-1, scoring="roc_au
     """
     skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
     grid_search = sklearn.model_selection.GridSearchCV(
-        model, param_grid, cv=skf, scoring=scoring, n_jobs=n_jobs, verbose=2 if verbose else 0
+        model,
+        param_grid,
+        cv=skf,
+        scoring=scoring,
+        n_jobs=n_jobs,
+        verbose=2 if verbose else 0,
     )
     grid_search.fit(X, y)
     best_params = grid_search.best_params_

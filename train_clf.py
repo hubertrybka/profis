@@ -89,8 +89,12 @@ def main(config_path, verbose=True):
             "max_iter": -1,
         }
         param_grid = [
-            {'C': [0.1, 1, 10, 100, 1000], 'kernel': ['linear']},
-            {'C': [0.1, 1, 10, 100, 1000], 'gamma': [0.001, 0.0001, 'scale'], 'kernel': ['rbf']},
+            {"C": [0.1, 1, 10, 100, 1000], "kernel": ["linear"]},
+            {
+                "C": [0.1, 1, 10, 100, 1000],
+                "gamma": [0.001, 0.0001, "scale"],
+                "kernel": ["rbf"],
+            },
         ]
         clf = SVC(**params)
 
@@ -100,49 +104,60 @@ def main(config_path, verbose=True):
             "max_depth": int(config["RF"]["max_depth"]),
             "max_features": str(config["RF"]["max_features"]),
             "max_leaf_nodes": bool(config["RF"]["bootstrap"]),
-            "seed": 42
+            "seed": 42,
         }
         param_grid = {
-            'n_estimators': [50, 100, 250, 500],
-            'max_features': ['sqrt', 'log2', None],
-            'max_depth': [3, 6, 9, None],
-            'max_leaf_nodes': [3, 6, 9, None],
+            "n_estimators": [50, 100, 250, 500],
+            "max_features": ["sqrt", "log2", None],
+            "max_depth": [3, 6, 9, None],
+            "max_leaf_nodes": [3, 6, 9, None],
         }
         clf = RandomForestClassifier(**params)
 
     elif model_type == "XGB":
         params = {
-            'learning_rate': float(config["XGB"]["learning_rate"]),
-            'n_estimators': int(config["XGB"]["n_estimators"]),
-            'max_depth': int(config["XGB"]["max_depth"]),
-            'min_child_weight': int(config["XGB"]["min_child_weight"]),
-            'gamma': float(config["XGB"]["gamma"]),
-            'subsample': float(config["XGB"]["subsample"]),
-            'nthread': int(config["XGB"]["nthread"]),
-            'seed': 42
+            "learning_rate": float(config["XGB"]["learning_rate"]),
+            "n_estimators": int(config["XGB"]["n_estimators"]),
+            "max_depth": int(config["XGB"]["max_depth"]),
+            "min_child_weight": int(config["XGB"]["min_child_weight"]),
+            "gamma": float(config["XGB"]["gamma"]),
+            "subsample": float(config["XGB"]["subsample"]),
+            "nthread": int(config["XGB"]["nthread"]),
+            "seed": 42,
         }
         param_grid = {
-            'n_estimators': [50, 100, 250, 500],
-            'max_depth': [3, 6, 9, 12],
-            'min_child_weight': [1, 3, 6],
-            'gamma': [0, 0.1, 0.2, 0.3],
-            'subsample': [0.6, 0.8, 1.0],
-            }
+            "n_estimators": [50, 100, 250, 500],
+            "max_depth": [3, 6, 9, 12],
+            "min_child_weight": [1, 3, 6],
+            "gamma": [0, 0.1, 0.2, 0.3],
+            "subsample": [0.6, 0.8, 1.0],
+        }
         clf = XGBClassifier(**params)
     else:
-        raise ValueError(f"Model type {model_type} not recognized. The config file may be corrupted.")
-
+        raise ValueError(
+            f"Model type {model_type} not recognized. The config file may be corrupted."
+        )
 
     # optimize hyperparameters
     if optimize:
         print("Optimizing hyperparameters...") if verbose else None
 
-        best_params, cv_results = grid_search(clf, X, y, param_grid, n_splits=10, n_jobs=-1, scoring="roc_auc",
-                                              verbose=verbose)
+        best_params, cv_results = grid_search(
+            clf,
+            X,
+            y,
+            param_grid,
+            n_splits=10,
+            n_jobs=-1,
+            scoring="roc_auc",
+            verbose=verbose,
+        )
         clf.set_params(**best_params)
         cv_results_df = pd.DataFrame(cv_results)
         cv_results_df.to_csv(f"{out_path}/{name}/cv_results.csv", index=False)
-        print(f"CV grid search results saved to {out_path}/{name}/cv_results.csv") if verbose else None
+        print(
+            f"CV grid search results saved to {out_path}/{name}/cv_results.csv"
+        ) if verbose else None
 
     # train model
 

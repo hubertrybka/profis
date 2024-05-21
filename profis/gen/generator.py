@@ -19,15 +19,15 @@ class VAEEncoder(nn.Module):
     """
 
     def __init__(
-            self,
-            input_size,
-            output_size,
-            fc1_size,
-            fc2_size,
-            fc3_size,
-            activation="relu",
-            fc2_enabled=True,
-            fc3_enabled=True,
+        self,
+        input_size,
+        output_size,
+        fc1_size,
+        fc2_size,
+        fc3_size,
+        activation="relu",
+        fc2_enabled=True,
+        fc3_enabled=True,
     ):
         super(VAEEncoder, self).__init__()
         self.fc1 = nn.Linear(input_size, fc1_size)
@@ -106,15 +106,15 @@ class GRUDecoder(nn.Module):
     """
 
     def __init__(
-            self,
-            hidden_size,
-            num_layers,
-            output_size,
-            dropout,
-            input_size,
-            encoding_size,
-            teacher_ratio,
-            device,
+        self,
+        hidden_size,
+        num_layers,
+        output_size,
+        dropout,
+        input_size,
+        encoding_size,
+        teacher_ratio,
+        device,
     ):
         super(GRUDecoder, self).__init__()
 
@@ -180,9 +180,9 @@ class GRUDecoder(nn.Module):
             out = self.softmax(out)
             random_float = random.random()
             if (
-                    teacher_forcing
-                    and random_float < self.teacher_ratio
-                    and y_true is not None
+                teacher_forcing
+                and random_float < self.teacher_ratio
+                and y_true is not None
             ):
                 out = y_true[:, n, :].unsqueeze(1)  # shape (batch_size, 1, 31)
             x = out
@@ -206,15 +206,15 @@ class LSTMDecoder(nn.Module):
     """
 
     def __init__(
-            self,
-            hidden_size,
-            num_layers,
-            output_size,
-            dropout,
-            input_size,
-            encoding_size,
-            teacher_ratio,
-            device,
+        self,
+        hidden_size,
+        num_layers,
+        output_size,
+        dropout,
+        input_size,
+        encoding_size,
+        teacher_ratio,
+        device,
     ):
         super(LSTMDecoder, self).__init__()
 
@@ -282,9 +282,9 @@ class LSTMDecoder(nn.Module):
             out = self.softmax(out)
             random_float = random.random()
             if (
-                    teacher_forcing
-                    and random_float < self.teacher_ratio
-                    and y_true is not None
+                teacher_forcing
+                and random_float < self.teacher_ratio
+                and y_true is not None
             ):
                 out = y_true[:, n, :].unsqueeze(1)  # shape (batch_size, 1, 31)
             x = out
@@ -316,22 +316,22 @@ class ProfisGRU(nn.Module):
     """
 
     def __init__(
-            self,
-            fp_size,
-            encoding_size,
-            hidden_size,
-            num_layers,
-            output_size,
-            dropout,
-            teacher_ratio,
-            random_seed=42,
-            use_cuda=True,
-            fc1_size=2048,
-            fc2_size=1024,
-            fc3_size=512,
-            encoder_activation="relu",
-            fc2_enabled=True,
-            fc3_enabled=True,
+        self,
+        fp_size,
+        encoding_size,
+        hidden_size,
+        num_layers,
+        output_size,
+        dropout,
+        teacher_ratio,
+        random_seed=42,
+        use_cuda=True,
+        fc1_size=2048,
+        fc2_size=1024,
+        fc3_size=512,
+        encoder_activation="relu",
+        fc2_enabled=True,
+        fc3_enabled=True,
     ):
         super(ProfisGRU, self).__init__()
         self.fp_size = fp_size
@@ -402,46 +402,47 @@ class ProfisGRU(nn.Module):
         eps = torch.randn_like(std)
         return eps.mul(std).add_(mu)
 
+
 class ProfisLSTM(ProfisGRU):
     """
-       Encoder-Decoder class based on VAE and LSTM. The samples from VAE latent space are passed
-       to the LSTM decoder as initial hidden state.
+    Encoder-Decoder class based on VAE and LSTM. The samples from VAE latent space are passed
+    to the LSTM decoder as initial hidden state.
 
-       Parameters:
-           fp_size (int): size of the fingerprint vector
-           encoding_size (int): size of the latent vectors mu and logvar
-           hidden_size (int): GRU hidden size
-           num_layers (int): GRU number of layers
-           output_size (int): GRU output size (alphabet size)
-           dropout (float): GRU dropout
-           teacher_ratio (float): teacher forcing ratio
-           random_seed (int): random seed for reproducibility
-           use_cuda (bool): whether to use cuda
-           fc1_size (int): size of the first fully connected layer in the encoder
-           fc2_size (int): size of the second fully connected layer in the encoder
-           fc3_size (int): size of the third fully connected layer in the encoder
-           encoder_activation (str): activation function for the encoder ('relu', 'elu', 'gelu' or 'leaky_relu')
-           fc2_enabled (bool): whether to use the second fully connected layer in the encoder
-           fc3_enabled (bool): whether to use the third fully connected layer in the encoder
-       """
+    Parameters:
+        fp_size (int): size of the fingerprint vector
+        encoding_size (int): size of the latent vectors mu and logvar
+        hidden_size (int): GRU hidden size
+        num_layers (int): GRU number of layers
+        output_size (int): GRU output size (alphabet size)
+        dropout (float): GRU dropout
+        teacher_ratio (float): teacher forcing ratio
+        random_seed (int): random seed for reproducibility
+        use_cuda (bool): whether to use cuda
+        fc1_size (int): size of the first fully connected layer in the encoder
+        fc2_size (int): size of the second fully connected layer in the encoder
+        fc3_size (int): size of the third fully connected layer in the encoder
+        encoder_activation (str): activation function for the encoder ('relu', 'elu', 'gelu' or 'leaky_relu')
+        fc2_enabled (bool): whether to use the second fully connected layer in the encoder
+        fc3_enabled (bool): whether to use the third fully connected layer in the encoder
+    """
 
     def __init__(
-            self,
-            fp_size,
-            encoding_size,
-            hidden_size,
-            num_layers,
-            output_size,
-            dropout,
-            teacher_ratio,
-            random_seed=42,
-            use_cuda=True,
-            fc1_size=2048,
-            fc2_size=1024,
-            fc3_size=512,
-            encoder_activation="relu",
-            fc2_enabled=True,
-            fc3_enabled=True,
+        self,
+        fp_size,
+        encoding_size,
+        hidden_size,
+        num_layers,
+        output_size,
+        dropout,
+        teacher_ratio,
+        random_seed=42,
+        use_cuda=True,
+        fc1_size=2048,
+        fc2_size=1024,
+        fc3_size=512,
+        encoder_activation="relu",
+        fc2_enabled=True,
+        fc3_enabled=True,
     ):
         super(ProfisGRU, self).__init__()
         self.fp_size = fp_size
