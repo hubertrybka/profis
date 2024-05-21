@@ -8,6 +8,7 @@ import selfies as sf
 import numpy as np
 import torch
 import deepsmiles as ds
+import wandb
 
 from profis.gen.loss import CCE
 from profis.utils.annealing import Annealer
@@ -37,6 +38,13 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     data_path = str(config["RUN"]["data_path"])
     fp_type = data_path.split("_")[-1].split(".")[0]
     out_encoding = str(config["RUN"]["out_encoding"])
+
+    config_dict = {s: dict(config.items(s)) for s in config.sections()}
+    wandb.init(
+        project='post-review',
+        config=config_dict,
+        name=run_name,
+    )
 
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
 
@@ -112,18 +120,20 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         }
         if kld_annealing:
             annealing_agent.step()
+        wandb.log(metrics_dict)
 
         # Update metrics df
         metrics.loc[len(metrics)] = metrics_dict
         if epoch % 10 == 0 or epoch == 5:
-            save_path = f"./models/{run_name}/epoch_{epoch}.pt"
+            save_path = f"models/{run_name}/epoch_{epoch}.pt"
             torch.save(model.state_dict(), save_path)
 
-        metrics.to_csv(f"./models/{run_name}/metrics.csv", index=False)
+        metrics.to_csv(f"models/{run_name}/metrics.csv", index=False)
         end_time = time.time()
         loop_time = (end_time - start_time) / 60  # in minutes
         print(f"Epoch {epoch} completed in {loop_time} minutes")
 
+    wandb.finish()
     return None
 
 
