@@ -33,7 +33,7 @@ def main(config_path, verbose=True):
     use_cuda = config.getboolean("RUN", "use_cuda")
     name = str(config["RUN"]["name"])
     model_type = str(config["INFO"]["model"])
-    optimize = config.getboolean("RF", "optimize_hyperparameters")
+    optimize = config.getboolean("RUN", "optimize_hyperparameters")
 
     start_time = time.time()
 
@@ -89,9 +89,9 @@ def main(config_path, verbose=True):
             "max_iter": -1,
         }
         param_grid = [
-            {"C": [0.1, 1, 10, 100, 1000], "kernel": ["linear"]},
+            {"C": [0.1, 1, 10, 100], "kernel": ["linear"]},
             {
-                "C": [0.1, 1, 10, 100, 1000],
+                "C": [0.1, 1, 10, 100],
                 "gamma": [0.001, 0.0001, "scale"],
                 "kernel": ["rbf"],
             },
@@ -147,7 +147,7 @@ def main(config_path, verbose=True):
             X,
             y,
             param_grid,
-            n_splits=10,
+            n_splits=5,
             n_jobs=-1,
             scoring="roc_auc",
             verbose=verbose,
