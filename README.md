@@ -180,12 +180,15 @@ Model weights and training progress will be saved to models/model_name catalog.
 
 ## Dependencies
 
-* Python 3.8
-* RDKit
-* PyTorch
-* scikit-learn
-* pandas
-* numpy
-* bayesian-optimization
-* unzip (for the execution of get_data.sh script)
+* python 3.8
+* bayesian_optimization 1.4.3
+* deepsmiles 1.0.1
+* numpy 1.24.3
+* pandas 2.2.2
+* rdkit 2023.9.6
+* scikit_learn 1.3.1
+* scipy 1.13.0
+* selfies 2.1.1
+* torch 2.0.1
+* xgboost 2.0.3
 
