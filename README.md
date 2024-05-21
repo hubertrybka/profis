@@ -192,4 +192,5 @@ Model weights and training progress will be saved to models/model_name catalog.
 * selfies 2.1.1
 * torch 2.0.1
 * xgboost 2.0.3
+* unzip 6.0 (automates the downloading of datasets and weights)
 
