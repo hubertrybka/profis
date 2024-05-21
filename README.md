@@ -31,8 +31,9 @@ our method can generate a diverse set of molecules that match the FP description
 
 1. Install [miniconda](https://docs.conda.io/en/latest/miniconda.html) following the instructions for your operating
    system.
-2. Clone the repository
-3. Install environment from the YAML file: `conda env create -n env -f environment.yml`
+2. Clone the repository: `git clone`
+3. Navigate to the repository: `cd profis`
+4. Install environment from the YAML file: `conda env create -n env -f environment.yml`
 
 ## Basic usage
 
