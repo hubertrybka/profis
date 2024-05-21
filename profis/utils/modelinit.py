@@ -2,7 +2,7 @@ import configparser
 
 import torch
 
-from profis.gen.generator import EncoderDecoderV3
+from profis.gen.generator import ProfisGRU
 
 
 def initialize_model(
@@ -22,7 +22,7 @@ def initialize_model(
     config.read(config_path)
     torch_device = device
     out_encoding = config["RUN"]["out_encoding"]
-    model = EncoderDecoderV3(
+    model = ProfisGRU(
         fp_size=int(config["MODEL"]["fp_len"]),
         encoding_size=int(config["MODEL"]["encoding_size"]),
         hidden_size=int(config["MODEL"]["hidden_size"]),

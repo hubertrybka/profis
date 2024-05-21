@@ -99,6 +99,10 @@ class GRUDecoder(nn.Module):
         num_layers (int): GRU number of layers
         output_size (int): GRU output size (alphabet size)
         dropout (float): GRU dropout
+        input_size (int): GRU input size
+        encoding_size (int): size of the latent vectors mu and logvar
+        teacher_ratio (float): teacher forcing ratio
+        device (torch.device): device to run the model on
     """
 
     def __init__(
@@ -144,7 +148,7 @@ class GRUDecoder(nn.Module):
         """
         Args:
             latent_vector (torch.tensor): latent vector of size [batch_size, encoding_size]
-            y_true (torch.tensor): batched SELFIES of target molecules
+            y_true (torch.tensor): batched OHE SMILES/SELFIES/DEEPSMILES of target molecules
             teacher_forcing: (bool): whether to use teacher forcing (training only)
 
         Returns:
@@ -195,6 +199,10 @@ class LSTMDecoder(nn.Module):
         num_layers (int): LSTM number of layers
         output_size (int): LSTM output size (alphabet size)
         dropout (float): LSTM dropout
+        input_size (int): LSTM input size
+        encoding_size (int): size of the latent vectors mu and logvar
+        teacher_ratio (float): teacher forcing ratio
+        device (torch.device): device to run the model on
     """
 
     def __init__(
@@ -240,16 +248,51 @@ class LSTMDecoder(nn.Module):
         """
         Args:
             latent_vector (torch.tensor): latent vector of size [batch_size, encoding_size]
-            y_true (torch.tensor): batched SELFIES of target molecules
+            y_true (torch.tensor): batched SMILES/SELFIES/DEEPSMILES of target molecules
             teacher_forcing: (bool): whether to use teacher forcing (training only)
 
         Returns:
             out (torch.tensor): LSTM output of size [batch_size, seq_len, alphabet_size]
         """
-        # TODO: Implement LSTM decoder
+        batch_size = latent_vector.shape[0]
+
+        # matching GRU hidden state shape
+        latent_transformed = self.fc1(latent_vector)  # shape (batch_size, hidden_size)
+
+        # initializing hidden state and cell state
+        hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
+            self.device
+        )
+        cell = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
+            self.device
+        )
+        hidden[0] = latent_transformed.unsqueeze(0)
+
+        # initializing input (batched start token)
+        x = (
+            self.start_ohe.repeat(batch_size, 1).unsqueeze(1).to(self.device)
+        )  # shape (batch_size, 1, 42)
+
+        # generating sequence
+        outputs = []
+        for n in range(128):
+            out, hidden = self.lstm(x, hidden, cell)
+            out = self.fc2(out)  # shape (batch_size, 1, 31)
+            outputs.append(out)
+            out = self.softmax(out)
+            random_float = random.random()
+            if (
+                    teacher_forcing
+                    and random_float < self.teacher_ratio
+                    and y_true is not None
+            ):
+                out = y_true[:, n, :].unsqueeze(1)  # shape (batch_size, 1, 31)
+            x = out
+        out_cat = torch.cat(outputs, dim=1)
+        return out_cat
 
 
-class EncoderDecoderV3(nn.Module):
+class ProfisGRU(nn.Module):
     """
     Encoder-Decoder class based on VAE and GRU. The samples from VAE latent space are passed
     to the GRU decoder as initial hidden state.
@@ -290,7 +333,7 @@ class EncoderDecoderV3(nn.Module):
             fc2_enabled=True,
             fc3_enabled=True,
     ):
-        super(EncoderDecoderV3, self).__init__()
+        super(ProfisGRU, self).__init__()
         self.fp_size = fp_size
         self.encoder = VAEEncoder(
             fp_size,
@@ -358,3 +401,70 @@ class EncoderDecoderV3(nn.Module):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return eps.mul(std).add_(mu)
+
+class ProfisLSTM(ProfisGRU):
+    """
+       Encoder-Decoder class based on VAE and LSTM. The samples from VAE latent space are passed
+       to the LSTM decoder as initial hidden state.
+
+       Parameters:
+           fp_size (int): size of the fingerprint vector
+           encoding_size (int): size of the latent vectors mu and logvar
+           hidden_size (int): GRU hidden size
+           num_layers (int): GRU number of layers
+           output_size (int): GRU output size (alphabet size)
+           dropout (float): GRU dropout
+           teacher_ratio (float): teacher forcing ratio
+           random_seed (int): random seed for reproducibility
+           use_cuda (bool): whether to use cuda
+           fc1_size (int): size of the first fully connected layer in the encoder
+           fc2_size (int): size of the second fully connected layer in the encoder
+           fc3_size (int): size of the third fully connected layer in the encoder
+           encoder_activation (str): activation function for the encoder ('relu', 'elu', 'gelu' or 'leaky_relu')
+           fc2_enabled (bool): whether to use the second fully connected layer in the encoder
+           fc3_enabled (bool): whether to use the third fully connected layer in the encoder
+       """
+
+    def __init__(
+            self,
+            fp_size,
+            encoding_size,
+            hidden_size,
+            num_layers,
+            output_size,
+            dropout,
+            teacher_ratio,
+            random_seed=42,
+            use_cuda=True,
+            fc1_size=2048,
+            fc2_size=1024,
+            fc3_size=512,
+            encoder_activation="relu",
+            fc2_enabled=True,
+            fc3_enabled=True,
+    ):
+        super(ProfisGRU, self).__init__()
+        self.fp_size = fp_size
+        self.encoder = VAEEncoder(
+            fp_size,
+            encoding_size,
+            fc1_size,
+            fc2_size,
+            fc3_size,
+            encoder_activation,
+            fc2_enabled,
+            fc3_enabled,
+        )
+        self.decoder = LSTMDecoder(
+            hidden_size,
+            num_layers,
+            output_size,
+            dropout,
+            input_size=output_size,
+            teacher_ratio=teacher_ratio,
+            encoding_size=encoding_size,
+            device=torch.device(
+                "cuda" if (use_cuda and torch.cuda.is_available()) else "cpu"
+            ),
+        )
+        random.seed(random_seed)
