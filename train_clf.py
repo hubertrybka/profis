@@ -98,31 +98,35 @@ def main(config_path, verbose=True):
         params = {
             "n_estimators": int(config["RF"]["n_estimators"]),
             "max_depth": int(config["RF"]["max_depth"]),
-            "min_samples_split": int(config["RF"]["min_samples_split"]),
-            "min_samples_leaf": int(config["RF"]["min_samples_leaf"]),
             "max_features": str(config["RF"]["max_features"]),
-            "bootstrap": bool(config["RF"]["bootstrap"]),
+            "max_leaf_nodes": bool(config["RF"]["bootstrap"]),
+            "seed": 42
         }
         param_grid = {
-
+            'n_estimators': [50, 100, 250, 500],
+            'max_features': ['sqrt', 'log2', None],
+            'max_depth': [3, 6, 9, None],
+            'max_leaf_nodes': [3, 6, 9, None],
         }
         clf = RandomForestClassifier(**params)
 
     elif model_type == "XGB":
         params = {
-            "n_estimators": int(config["XGB"]["n_estimators"]),
-            "max_depth": int(config["XGB"]["max_depth"]),
-            "learning_rate": float(config["XGB"]["learning_rate"]),
-            "subsample": float(config["XGB"]["subsample"]),
-            "colsample_bytree": float(config["XGB"]["colsample_bytree"]),
-            "gamma": float(config["XGB"]["gamma"]),
-            "reg_alpha": float(config["XGB"]["reg_alpha"]),
-            "reg_lambda": float(config["XGB"]["reg_lambda"]),
-            "objective": str(config["XGB"]["objective"]),
-            "n_jobs": -1,
+            'learning_rate': float(config["XGB"]["learning_rate"]),
+            'n_estimators': int(config["XGB"]["n_estimators"]),
+            'max_depth': int(config["XGB"]["max_depth"]),
+            'min_child_weight': int(config["XGB"]["min_child_weight"]),
+            'gamma': float(config["XGB"]["gamma"]),
+            'subsample': float(config["XGB"]["subsample"]),
+            'nthread': int(config["XGB"]["nthread"]),
+            'seed': 42
         }
         param_grid = {
-
+            'n_estimators': [50, 100, 250, 500],
+            'max_depth': [3, 6, 9, 12],
+            'min_child_weight': [1, 3, 6],
+            'gamma': [0, 0.1, 0.2, 0.3],
+            'subsample': [0.6, 0.8, 1.0],
             }
         clf = XGBClassifier(**params)
     else:
