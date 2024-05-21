@@ -89,9 +89,9 @@ def main(config_path, verbose=True):
             "max_iter": -1,
         }
         param_grid = [
-            {"C": [1, 10, 100, 500], "kernel": ["linear"]},
+            {"C": [0.1, 1, 10, 100], "kernel": ["linear"]},
             {
-                "C": [1, 10, 100, 500],
+                "C": [0.1, 1, 10, 100, 500],
                 "gamma": [0.001, 0.0001, "scale"],
                 "kernel": ["rbf"],
             },
@@ -120,12 +120,13 @@ def main(config_path, verbose=True):
             "max_features": max_features,
             "max_leaf_nodes": max_leaf_nodes,
             "random_state": 42,
+            "n_jobs": -1
         }
         param_grid = {
             "n_estimators": [50, 100, 250, 500],
             "max_features": ["sqrt", "log2", None],
-            "max_depth": [3, 6, 9, None],
-            "max_leaf_nodes": [3, 6, 9, None],
+            "max_depth": [3, 6, 9, 12, None],
+            "max_leaf_nodes": [3, 6, 9, None]
         }
         clf = RandomForestClassifier(**params)
 
