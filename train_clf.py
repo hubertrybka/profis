@@ -89,9 +89,9 @@ def main(config_path, verbose=True):
             "max_iter": -1,
         }
         param_grid = [
-            {"C": [0.1, 1, 10, 100], "kernel": ["linear"]},
+            {"C": [1, 10, 100, 500], "kernel": ["linear"]},
             {
-                "C": [0.1, 1, 10, 100],
+                "C": [1, 10, 100, 500],
                 "gamma": [0.001, 0.0001, "scale"],
                 "kernel": ["rbf"],
             },
