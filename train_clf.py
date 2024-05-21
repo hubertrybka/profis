@@ -99,12 +99,27 @@ def main(config_path, verbose=True):
         clf = SVC(**params)
 
     elif model_type == "RF":
+        max_depth = (
+            None
+            if config["RF"]["max_depth"] == "None"
+            else int(config["RF"]["max_depth"])
+        )
+        max_features = (
+            None
+            if config["RF"]["max_features"] == "None"
+            else str(config["RF"]["max_features"])
+        )
+        max_leaf_nodes = (
+            None
+            if config["RF"]["max_leaf_nodes"] == "None"
+            else int(config["RF"]["max_leaf_nodes"])
+        )
         params = {
             "n_estimators": int(config["RF"]["n_estimators"]),
-            "max_depth": int(config["RF"]["max_depth"]),
-            "max_features": str(config["RF"]["max_features"]),
-            "max_leaf_nodes": bool(config["RF"]["bootstrap"]),
-            "seed": 42,
+            "max_depth": max_depth,
+            "max_features": max_features,
+            "max_leaf_nodes": max_leaf_nodes,
+            "random_state": 42,
         }
         param_grid = {
             "n_estimators": [50, 100, 250, 500],
