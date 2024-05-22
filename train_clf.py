@@ -12,7 +12,7 @@ from xgboost import XGBClassifier
 
 from profis.utils.finger import encode
 from profis.utils.modelinit import initialize_model
-from profis.clf.model_selection import cross_evaluate, grid_search
+from profis.clf.model_selection import nested_CV
 
 
 def main(config_path, verbose=True):
@@ -154,42 +154,31 @@ def main(config_path, verbose=True):
             f"Model type {model_type} not recognized. The config file may be corrupted."
         )
 
-    # optimize hyperparameters
-    if optimize:
-        print("Optimizing hyperparameters...") if verbose else None
+    # hyperparameter optimization and cross-validation
 
-        best_params, cv_results = grid_search(
-            clf,
-            X,
-            y,
-            param_grid,
-            n_splits=5,
-            n_jobs=-1,
-            scoring="roc_auc",
-            verbose=verbose,
-        )
-        clf.set_params(**best_params)
-        cv_results_df = pd.DataFrame(cv_results)
-        cv_results_df.to_csv(f"{out_path}/{name}/cv_results.csv", index=False)
-        print(
-            f"CV grid search results saved to {out_path}/{name}/cv_results.csv"
-        ) if verbose else None
+    model, test_scores = nested_CV(clf, X, y, param_grid, optimize=optimize, verbose=verbose)
 
-    # train model
+    best_params = model.best_params_
+    clf.set_params(**best_params)
 
-    print(f"Training {model_type}...") if verbose else None
+    # refit the model with the best hyperparameters
     clf.fit(X, y)
+
+    cv_results_df = pd.DataFrame(model.cv_results_)
+    cv_results_df.to_csv(f"{out_path}/{name}/cv_results.csv", index=False)
+    print(
+        f"Best hyperparameters: {best_params} with score {test_scores.mean()}"
+    ) if verbose else None
 
     # save model
 
     with open(f"./{out_path}/{name}/clf.pkl", "wb") as file:
         pickle.dump(clf, file)
 
-    # evaluate
-
-    print("Evaluating...") if verbose else None
-    metrics = cross_evaluate(clf, X, y)
-
+    metrics = {
+        "roc_auc": round(test_scores.mean(), 4),
+        "std": round(test_scores.std(), 4)
+    }
     metrics_df = pd.DataFrame(metrics, index=[0])
     metrics_df.to_csv(f"{out_path}/{name}/metrics.csv", index=False)
 
