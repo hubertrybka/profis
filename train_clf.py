@@ -125,8 +125,8 @@ def main(config_path, verbose=True):
         param_grid = {
             "n_estimators": [50, 100, 250, 500],
             "max_features": ["sqrt", "log2", None],
-            "max_depth": [3, 6, 9, 12, None],
-            "max_leaf_nodes": [3, 6, 9, None]
+            "max_depth": [3, 6, 9, None],
+            "max_leaf_nodes": [3, 6, 9]
         }
         clf = RandomForestClassifier(**params)
 
@@ -156,19 +156,19 @@ def main(config_path, verbose=True):
 
     # hyperparameter optimization and cross-validation
 
-    model, test_scores = nested_CV(clf, X, y, param_grid, optimize=optimize, verbose=verbose)
-
-    best_params = model.best_params_
-    clf.set_params(**best_params)
+    best_model, test_scores = nested_CV(clf, X, y, param_grid, optimize=optimize, verbose=verbose)
+    clf = best_model
 
     # refit the model with the best hyperparameters
     clf.fit(X, y)
+    best_params = clf.get_params()
 
-    cv_results_df = pd.DataFrame(model.cv_results_)
-    cv_results_df.to_csv(f"{out_path}/{name}/cv_results.csv", index=False)
     print(
-        f"Best hyperparameters: {best_params} with score {test_scores.mean()}"
+        f"Best hyperparameters: {best_params} with score "
+        f"{round(test_scores.mean(), 4)} +/- {round(test_scores.std(), 4)}"
     ) if verbose else None
+    with open(f"./{out_path}/{name}/best_params.txt", "w") as file:
+        file.write(str(best_params))
 
     # save model
 
