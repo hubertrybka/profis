@@ -45,7 +45,6 @@ def nested_CV(
     eval_scores = []
     models = []
 
-    pointer = 1
     for train_index, test_index in outer_cv.split(X, y):
         x_train, x_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
@@ -57,7 +56,6 @@ def nested_CV(
         eval_scores.append(clf.best_score_)
 
         models.append(clf.best_estimator_)
-        pointer += 1
 
     if optimize:
         best_model = models[eval_scores.index(max(eval_scores))]
