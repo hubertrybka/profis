@@ -24,11 +24,11 @@ def nested_CV(
     """
 
     inner_cv = StratifiedKFold(n_splits=n_splits, shuffle=True)
-    outer_cv = KFold(n_splits=n_splits, shuffle=True)
+    outer_cv = StratifiedKFold(n_splits=5, shuffle=True)
 
     if optimize:
         # inner loop: parameter search
-        clf = GridSearchCV(
+        grid_search = GridSearchCV(
             model,
             param_grid,
             cv=inner_cv,
@@ -38,7 +38,7 @@ def nested_CV(
             refit=True
         )
     else:
-        clf = model
+        grid_search = model
 
     # outer loop: model evaluation
     test_scores = []
@@ -46,16 +46,16 @@ def nested_CV(
     models = []
 
     for train_index, test_index in outer_cv.split(X, y):
-        x_train, x_test = X[train_index], X[test_index]
+        X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
-        clf.fit(x_train, y_train)
-        pred_test = clf.predict_proba(x_test)
+        grid_search.fit(X_train, y_train)
+        pred_test = grid_search.predict_proba(X_test)
         auc_test = roc_auc_score(y_test, pred_test[:, 1])
         test_scores.append(auc_test)
-        eval_scores.append(clf.best_score_)
-
-        models.append(clf.best_estimator_)
+        if optimize:
+            eval_scores.append(grid_search.best_score_)
+            models.append(grid_search.best_estimator_)
 
     if optimize:
         best_model = models[eval_scores.index(max(eval_scores))]
