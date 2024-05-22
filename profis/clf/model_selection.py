@@ -1,47 +1,7 @@
 import pandas as pd
-from sklearn.model_selection import KFold, StratifiedKFold, GridSearchCV, cross_val_score
+from sklearn.model_selection import KFold, StratifiedKFold, GridSearchCV
 from sklearn.metrics import roc_auc_score, confusion_matrix
-
-
-def evaluate(model, test_X, test_y):
-    """
-    Evaluates the SVC model performance on the test set.
-    Args:
-        model (sklearn.svm.SVC): trained model
-        test_X: test set features
-        test_y: test set labels
-    Returns:
-        metrics (dict): dictionary containing accuracy, ROC AUC and confusion matrix metrics
-    """
-    predictions = model.predict_proba(test_X)[:, 1]
-    df = pd.DataFrame()
-    df["pred"] = predictions
-    df["label"] = test_y.values
-    df["pred"] = df["pred"].apply(lambda x: 1 if x > 0.5 else 0)
-    accuracy = df[df["pred"] == df["label"]].shape[0] / df.shape[0]
-    try:
-        roc_auc = roc_auc_score(df["label"], df["pred"])
-    except ValueError:
-        print(
-            "ROC AUC score could not be calculated. Only one class present in the test set."
-        )
-        roc_auc = 0
-    try:
-        tn, fp, fn, tp = confusion_matrix(df["label"], df["pred"]).ravel()
-    except ValueError:
-        print(
-            "Confusion matrix could not be calculated. Only one class present in the test set."
-        )
-        tn, fp, fn, tp = 0, 0, 0, 0
-    metrics = {
-        "accuracy": round(accuracy, 4),
-        "roc_auc": round(roc_auc, 4),
-        "true_positive": round(tp / df.shape[0], 4),
-        "true_negative": round(tn / df.shape[0], 4),
-        "false_positive": round(fp / df.shape[0], 4),
-        "false_negative": round(fn / df.shape[0], 4),
-    }
-    return metrics
+import numpy as np
 
 
 def nested_CV(
@@ -50,7 +10,7 @@ def nested_CV(
     """
     Nested CV grid search for the best hyperparameters of the SVC model.
     Args:
-        model (sklearn.svm.SVC): model to be evaluated
+        model: model to be evaluated
         X: data features
         y: data labels
         param_grid (dict): dictionary containing the hyperparameters to be evaluated
@@ -68,21 +28,38 @@ def nested_CV(
 
     if optimize:
         # inner loop: parameter search
-        model = GridSearchCV(
+        clf = GridSearchCV(
             model,
             param_grid,
             cv=inner_cv,
             scoring=scoring,
             n_jobs=n_jobs,
             verbose=2 if verbose else 0,
+            refit=True
         )
+    else:
+        clf = model
 
     # outer loop: model evaluation
-    test_scores = cross_val_score(model,
-                                  X,
-                                  y,
-                                  cv=outer_cv,
-                                  n_jobs=n_jobs,
-                                  scoring=scoring)
+    test_scores = []
+    eval_scores = []
+    models = []
 
-    return model, test_scores
+    for train_index, test_index in outer_cv.split(X, y):
+        x_train, x_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+
+        clf.fit(x_train, y_train)
+        pred_test = clf.predict_proba(x_test)
+        auc_test = roc_auc_score(y_test, pred_test[:, 1])
+        test_scores.append(auc_test)
+        eval_scores.append(clf.best_score_)
+
+        models.append(clf.best_estimator_)
+
+    if optimize:
+        best_model = models[eval_scores.index(max(eval_scores))]
+    else:
+        best_model = model
+
+    return best_model, np.array(test_scores)
