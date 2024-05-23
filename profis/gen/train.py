@@ -41,7 +41,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
 
     config_dict = {s: dict(config.items(s)) for s in config.sections()}
     wandb.init(
-        project='post-review',
+        project='profis',
         config=config_dict,
         name=run_name,
     )
@@ -124,7 +124,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
 
         # Update metrics df
         metrics.loc[len(metrics)] = metrics_dict
-        if epoch % 10 == 0 or epoch == 5:
+        if epoch % 50 == 0:
             save_path = f"models/{run_name}/epoch_{epoch}.pt"
             torch.save(model.state_dict(), save_path)
 
