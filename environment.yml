@@ -94,7 +94,6 @@ dependencies:
   - iniconfig=2.0.0=pyhd8ed1ab_0
   - intel-openmp=2021.4.0=h06a4308_3561
   - ipykernel=6.25.2=pyh2140261_0
-  - ipython=8.15.0=pyh0d859eb_0
   - ipython_genutils=0.2.0=py_1
   - ipywidgets=8.1.1=pyhd8ed1ab_0
   - isoduration=20.11.0=pyhd8ed1ab_0
@@ -190,8 +189,6 @@ dependencies:
   - mysql-common=8.0.33=hf1915f5_5
   - mysql-libs=8.0.33=hca2cd23_5
   - nbclient=0.8.0=pyhd8ed1ab_0
-  - nbconvert=7.8.0=pyhd8ed1ab_0
-  - nbconvert-core=7.8.0=pyhd8ed1ab_0
   - nbconvert-pandoc=7.8.0=pyhd8ed1ab_0
   - nbformat=5.9.2=pyhd8ed1ab_0
   - nccl=2.21.5.1=h3a97aeb_0
@@ -335,9 +332,12 @@ dependencies:
       - astroid==3.2.0
       - cmake==3.29.2
       - dill==0.3.8
+      - docopt==0.6.2
+      - ipython==8.12.3
       - isort==5.13.2
       - lit==18.1.4
       - mccabe==0.7.0
+      - nbconvert==7.16.4
       - nvidia-cublas-cu11==11.10.3.66
       - nvidia-cuda-cupti-cu11==11.7.101
       - nvidia-cuda-nvrtc-cu11==11.7.99
@@ -349,9 +349,11 @@ dependencies:
       - nvidia-cusparse-cu11==11.7.4.91
       - nvidia-nccl-cu11==2.14.3
       - nvidia-nvtx-cu11==11.7.91
+      - pipreqs==0.5.0
       - platformdirs==4.2.2
       - pylint==3.2.0
       - tomlkit==0.12.5
       - torch==2.0.1
       - triton==2.0.0
+      - yarg==0.1.9
 prefix: /home/hubert/miniconda3/envs/profis
