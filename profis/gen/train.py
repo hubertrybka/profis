@@ -170,6 +170,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
         vectorizer = SELFIESVectorizer(pad_to_len=128)
     elif format == "deepsmiles":
         vectorizer = DeepSMILESVectorizer(pad_to_len=128)
+        converter = ds.Converter(rings=True, branches=True)
     elif format == "smiles":
         vectorizer = SMILESVectorizer(pad_to_len=128)
     else:
@@ -191,8 +192,12 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             if format == "selfies":
                 smiles_list = [sf.decoder(x) for x in seq_list]
             elif format == "deepsmiles":
-                converter = ds.Converter(rings=True, branches=True)
-                smiles_list = [converter.decode(x) for x in seq_list]
+                smiles_list = []
+                for smiles in smiles_list:
+                    try:
+                        smiles_list.append(converter.decode(smiles))
+                    except ds.DecodeError:
+                        smiles_list.append(None)
             else:
                 smiles_list = seq_list
 
