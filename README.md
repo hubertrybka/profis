@@ -31,8 +31,9 @@ our method can generate a diverse set of molecules that match the FP description
 
 1. Install [miniconda](https://docs.conda.io/en/latest/miniconda.html) following the instructions for your operating
    system.
-2. Clone the repository
-3. Install environment from the YAML file: `conda env create -n env -f environment.yml`
+2. Clone the repository: `git clone https://github.com/hubertrybka/profis.git`
+3. Navigate to the profis directory: `cd profis`
+4. Install environment from the YAML file: `conda env create -n env -f environment.yml`
 
 ## Basic usage
 
@@ -180,12 +181,16 @@ Model weights and training progress will be saved to models/model_name catalog.
 
 ## Dependencies
 
-* Python 3.8
-* RDKit
-* PyTorch
-* scikit-learn
-* pandas
-* numpy
-* bayesian-optimization
-* unzip (for the execution of get_data.sh script)
+* python 3.8
+* bayesian_optimization 1.4.3
+* deepsmiles 1.0.1
+* numpy 1.24.3
+* pandas 2.2.2
+* rdkit 2023.9.6
+* scikit_learn 1.3.1
+* scipy 1.13.0
+* selfies 2.1.1
+* torch 2.0.1
+* xgboost 2.0.3
+* unzip 6.0 (automates the downloading of datasets and weights)
 

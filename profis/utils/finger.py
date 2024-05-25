@@ -3,7 +3,6 @@ import numpy as np
 import torch
 import torch.utils.data as Data
 from rdkit import Chem
-from tqdm import tqdm
 from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
 
 from profis.gen.dataset import LatentEncoderDataset
@@ -102,7 +101,7 @@ def encode(df, model, device, batch=1024):
     model.eval()
     model.to(device)
     with torch.no_grad():
-        for batch in tqdm(dataloader):
+        for batch in dataloader:
             X = batch.to(device)
             mu, logvar = model.encoder(X)
             mus.append(mu.cpu().numpy())

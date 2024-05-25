@@ -42,12 +42,10 @@ def search(config_path, return_list):
     verbosity = int(config["SEARCH"]["verbosity"])
 
     # initialize scorer
-    latent_size = latent_size
     scorer = SKLearnScorer(model_path)
 
     # define bounds
     pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
-
     bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.2)
 
     # initialize optimizer
