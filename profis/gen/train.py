@@ -205,35 +205,41 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             none_idcs = [i for i, x in enumerate(mol_list) if x is None]
             mol_list_valid = [x for x in mol_list if x is not None]
 
-            # Calculate validity
-            batch_valid = 1 - (len(none_idcs) / len(mol_list))
-            mean_validity += batch_valid
+            if len(mol_list) > 0:
+                # Calculate validity
+                batch_valid = 1 - (len(none_idcs) / len(mol_list))
+                mean_validity += batch_valid
 
-            # Calculate QED
-            batch_qed = 0
-            if len(mol_list_valid) > 0:
-                for mol in mol_list_valid:
-                    batch_qed += QED.qed(mol)
-                batch_qed = batch_qed / len(mol_list_valid)
-                mean_qed += batch_qed
+                # Calculate QED
+                batch_qed = 0
+                if len(mol_list_valid) > 0:
+                    for mol in mol_list_valid:
+                        batch_qed += QED.qed(mol)
+                    batch_qed = batch_qed / len(mol_list_valid)
+                    mean_qed += batch_qed
 
-            X = X.detach().cpu()
-            X = np.delete(X, none_idcs, axis=0)
+                X = X.detach().cpu()
+                X = np.delete(X, none_idcs, axis=0)
 
-            # Calculate FP recon score
-            batch_fp_recon = 0
-            for mol, fp in zip(mol_list_valid, X):
-                if fp_type == "ECFP":
-                    batch_fp_recon += ECFP_score(mol, fp)
-                elif fp_type == "KRFP":
-                    batch_fp_recon += KRFP_score(mol, fp)
-            if len(mol_list_valid) > 0:
-                batch_fp_recon = batch_fp_recon / len(mol_list_valid)
-            mean_fp_recon += batch_fp_recon
+                # Calculate FP recon score
+                batch_fp_recon = 0
+                for mol, fp in zip(mol_list_valid, X):
+                    if fp_type == "ECFP":
+                        batch_fp_recon += ECFP_score(mol, fp)
+                    elif fp_type == "KRFP":
+                        batch_fp_recon += KRFP_score(mol, fp)
+                if len(mol_list_valid) > 0:
+                    batch_fp_recon = batch_fp_recon / len(mol_list_valid)
+                mean_fp_recon += batch_fp_recon
 
-        mean_validity = mean_validity / len(scoring_loader)
-        mean_fp_recon = mean_fp_recon / len(scoring_loader)
-        mean_qed = mean_qed / len(scoring_loader)
+            mean_validity = mean_validity / len(scoring_loader)
+            mean_fp_recon = mean_fp_recon / len(scoring_loader)
+            mean_qed = mean_qed / len(scoring_loader)
+        else:
+            mean_qed = 0
+            mean_fp_recon = 0
+            mean_validity = 0
+
         return mean_qed, mean_fp_recon, mean_validity
 
 
