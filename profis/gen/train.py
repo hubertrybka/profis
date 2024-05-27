@@ -137,12 +137,13 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     return None
 
 
-def evaluate(model, val_loader):
+def evaluate(model, val_loader, notation="smiles"):
     """
     Evaluates the model on the validation set
     Args:
         model (nn.Module): EncoderDecoderV3 model
         val_loader (DataLoader): validation set loader
+        notation (str): output notation, can be "smiles", "selfies" or "deepsmiles"
     Returns:
         float: average loss on the validation set
 
@@ -150,7 +151,7 @@ def evaluate(model, val_loader):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
     with torch.no_grad():
-        criterion = CCE()
+        criterion = CCE(notation=notation)
         epoch_loss = 0
         for batch_idx, (X, y) in enumerate(val_loader):
             X = X.to(device)
@@ -203,9 +204,9 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                 smiles_list = [sf.decoder(x) for x in seq_list]
             elif format == "deepsmiles":
                 smiles_list = []
-                for smiles in smiles_list:
+                for x in seq_list:
                     try:
-                        smiles_list.append(converter.decode(smiles))
+                        smiles_list.append(converter.decode(x))
                     except ds.DecodeError:
                         smiles_list.append(None)
             else:
