@@ -200,6 +200,12 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                 vectorizer.devectorize(ohe.detach().cpu().numpy(), remove_special=True)
                 for ohe in output
             ]
+
+            # Print example sequences
+            print("Example decoded sequences:")
+            for i in range(5):
+                print(seq_list[i])
+
             if format == "selfies":
                 smiles_list = [sf.decoder(x) for x in seq_list]
             elif format == "deepsmiles":
