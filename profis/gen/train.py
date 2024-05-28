@@ -204,7 +204,8 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                     try:
                         smiles_list.append(converter.decode(x))
                     except ds.DecodeError:
-                        continue
+                        invalid_string = "invalid"
+                        smiles_list.append(invalid_string)
             else:
                 smiles_list = seq_list
 
