@@ -86,7 +86,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             epoch_loss += loss.item()
 
         avg_loss = epoch_loss / len(train_loader)
-        val_loss = evaluate(model, val_loader)
+        val_loss = evaluate(model, val_loader, notation=out_encoding)
 
         if epoch % 10 == 0:
             start = time.time()
