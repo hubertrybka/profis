@@ -212,7 +212,6 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             none_idcs = [i for i, x in enumerate(mol_list) if x is None]
             mol_list_valid = [x for x in mol_list if x is not None]
 
-
             if len(mol_list) > 0:
                 # Calculate validity
                 batch_valid = 1 - (len(none_idcs) / len(mol_list))
@@ -222,7 +221,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                 batch_qed = 0
                 if len(mol_list_valid) > 0:
                     for mol in mol_list_valid:
-                        batch_qed += QED.qed(mol)
+                        batch_qed += try_QED(mol)
                     batch_qed = batch_qed / len(mol_list_valid)
                     mean_qed += batch_qed
 
@@ -290,3 +289,18 @@ def ECFP_score(mol, fp: torch.Tensor):
         if ECFP_reconstructed[i] and fp[i]:
             score += 1
     return score / torch.sum(fp).item()
+
+
+def try_QED(mol):
+    """
+    Tries to calculate the QED score for a molecule
+    Args:
+        mol: rdkit mol object
+    Returns:
+        qed: float
+    """
+    try:
+        qed = QED.qed(mol)
+    except:
+        qed = 0
+    return qed
