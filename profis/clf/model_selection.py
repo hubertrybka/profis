@@ -1,6 +1,5 @@
-import pandas as pd
-from sklearn.model_selection import KFold, StratifiedKFold, GridSearchCV
-from sklearn.metrics import roc_auc_score, confusion_matrix
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
+from sklearn.metrics import roc_auc_score
 import numpy as np
 
 
@@ -23,8 +22,8 @@ def nested_CV(
         best_params (dict): dictionary containing the best hyperparameters
     """
 
-    inner_cv = StratifiedKFold(n_splits=n_splits, shuffle=True)
-    outer_cv = StratifiedKFold(n_splits=5, shuffle=True)
+    inner_cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    outer_cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     if optimize:
         # inner loop: parameter search
