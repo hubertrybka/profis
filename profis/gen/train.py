@@ -212,6 +212,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             none_idcs = [i for i, x in enumerate(mol_list) if x is None]
             mol_list_valid = [x for x in mol_list if x is not None]
 
+
             if len(mol_list) > 0:
                 # Calculate validity
                 batch_valid = 1 - (len(none_idcs) / len(mol_list))
@@ -235,17 +236,18 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                         batch_fp_recon += ECFP_score(mol, fp)
                     elif fp_type == "KRFP":
                         batch_fp_recon += KRFP_score(mol, fp)
-                if len(mol_list_valid) > 0:
+                    else:
+                        raise ValueError("Invalid fp_type, must be 'ECFP' or 'KRFP'")
                     batch_fp_recon = batch_fp_recon / len(mol_list_valid)
-                mean_fp_recon += batch_fp_recon
+                    mean_fp_recon += batch_fp_recon
+            else:
+                mean_qed = 0
+                mean_fp_recon = 0
+                mean_validity = 0
 
-            mean_validity = mean_validity / len(scoring_loader)
-            mean_fp_recon = mean_fp_recon / len(scoring_loader)
-            mean_qed = mean_qed / len(scoring_loader)
-        else:
-            mean_qed = 0
-            mean_fp_recon = 0
-            mean_validity = 0
+        mean_validity = mean_validity / len(scoring_loader)
+        mean_fp_recon = mean_fp_recon / len(scoring_loader)
+        mean_qed = mean_qed / len(scoring_loader)
 
         print('Example decoded sequences:')
         [print(seq) for seq in example_list]
