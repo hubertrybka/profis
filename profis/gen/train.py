@@ -188,6 +188,8 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
         raise ValueError("Invalid format, must be 'selfies', 'smiles' or 'deepsmiles'")
 
     model.eval()
+    example_list = []
+
     with torch.no_grad():
         mean_qed = 0
         mean_fp_recon = 0
@@ -201,10 +203,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                 for ohe in output
             ]
 
-            # Print example sequences
-            print("Example decoded sequences:")
-            for i in range(5):
-                print(seq_list[i])
+            example_list = seq_list[:10] if batch_idx == 0 else example_list
 
             if format == "selfies":
                 smiles_list = [sf.decoder(x) for x in seq_list]
@@ -222,6 +221,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             mol_list = [Chem.MolFromSmiles(x) for x in smiles_list]
             none_idcs = [i for i, x in enumerate(mol_list) if x is None]
             mol_list_valid = [x for x in mol_list if x is not None]
+
 
             if len(mol_list) > 0:
                 # Calculate validity
@@ -246,17 +246,21 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                         batch_fp_recon += ECFP_score(mol, fp)
                     elif fp_type == "KRFP":
                         batch_fp_recon += KRFP_score(mol, fp)
-                if len(mol_list_valid) > 0:
+                    else:
+                        raise ValueError("Invalid fp_type, must be 'ECFP' or 'KRFP'")
                     batch_fp_recon = batch_fp_recon / len(mol_list_valid)
-                mean_fp_recon += batch_fp_recon
+                    mean_fp_recon += batch_fp_recon
+            else:
+                mean_qed = 0
+                mean_fp_recon = 0
+                mean_validity = 0
 
-            mean_validity = mean_validity / len(scoring_loader)
-            mean_fp_recon = mean_fp_recon / len(scoring_loader)
-            mean_qed = mean_qed / len(scoring_loader)
-        else:
-            mean_qed = 0
-            mean_fp_recon = 0
-            mean_validity = 0
+        mean_validity = mean_validity / len(scoring_loader)
+        mean_fp_recon = mean_fp_recon / len(scoring_loader)
+        mean_qed = mean_qed / len(scoring_loader)
+
+        print('Example decoded sequences:')
+        [print(seq) for seq in example_list]
 
         return mean_qed, mean_fp_recon, mean_validity
 
