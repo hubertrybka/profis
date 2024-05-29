@@ -178,6 +178,8 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
         raise ValueError("Invalid format, must be 'selfies', 'smiles' or 'deepsmiles'")
 
     model.eval()
+    example_list = []
+
     with torch.no_grad():
         mean_qed = 0
         mean_fp_recon = 0
@@ -191,10 +193,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                 for ohe in output
             ]
 
-            # Print example sequences
-            print("Example decoded sequences:")
-            for i in range(5):
-                print(seq_list[i])
+            example_list = seq_list[:10] if batch_idx == 0 else example_list
 
             if format == "selfies":
                 smiles_list = [sf.decoder(x) for x in seq_list]
@@ -247,6 +246,9 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             mean_qed = 0
             mean_fp_recon = 0
             mean_validity = 0
+
+        print('Example decoded sequences:')
+        [print(seq) for seq in example_list]
 
         return mean_qed, mean_fp_recon, mean_validity
 
