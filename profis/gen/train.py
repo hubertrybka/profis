@@ -258,7 +258,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
         mean_fp_recon = mean_fp_recon / len(scoring_loader)
         mean_qed = mean_qed / len(scoring_loader)
 
-        print('Example decoded sequences:')
+        print("Example decoded sequences:")
         [print(seq) for seq in example_list]
 
         return mean_qed, mean_fp_recon, mean_validity

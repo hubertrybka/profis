@@ -4,7 +4,15 @@ import numpy as np
 
 
 def nested_CV(
-        model, X, y, param_grid, n_splits=5, n_jobs=-1, scoring="roc_auc", optimize=True, verbose=False
+    model,
+    X,
+    y,
+    param_grid,
+    n_splits=5,
+    n_jobs=-1,
+    scoring="roc_auc",
+    optimize=True,
+    verbose=False,
 ):
     """
     Nested CV grid search for the best hyperparameters of the SVC model.
@@ -34,7 +42,7 @@ def nested_CV(
             scoring=scoring,
             n_jobs=n_jobs,
             verbose=2 if verbose else 0,
-            refit=True
+            refit=True,
         )
     else:
         grid_search = model
