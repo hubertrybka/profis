@@ -50,18 +50,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
 
     # Define dataframe for logging progress
     epochs_range = range(start_epoch, epochs + start_epoch)
-    metrics = pd.DataFrame(
-        columns=[
-            "epoch",
-            "kld_loss",
-            "kld_weighted",
-            "train_loss",
-            "val_loss",
-            "mean_qed",
-            "mean_fp_recon",
-            "mean_validity",
-        ]
-    )
+    metrics = pd.DataFrame()
 
     # Define loss function and optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
@@ -108,29 +97,29 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             mean_fp_recon = None
             mean_validity = None
 
-        metrics_dict = {
-            "epoch": epoch,
-            "kld_loss": kld_loss.item(),
-            "kld_weighted": kld_weighted.item(),
-            "train_loss": avg_loss,
-            "val_loss": val_loss,
-            "mean_qed": mean_qed,
-            "mean_fp_recon": mean_fp_recon,
-            "mean_validity": mean_validity,
-        }
+        metrics_row = pd.DataFrame({
+            "epoch": [epoch],
+            "kld_loss": [kld_loss.item()],
+            "kld_weighted": [kld_weighted.item()],
+            "train_loss": [avg_loss],
+            "val_loss": [val_loss],
+            "mean_qed": [mean_qed],
+            "mean_fp_recon": [mean_fp_recon],
+            "mean_validity": [mean_validity],
+        })
         if kld_annealing:
             annealing_agent.step()
         wandb.log(metrics_dict)
 
         # Update metrics df
-        metrics.loc[len(metrics)] = metrics_dict
-        if epoch % 50 == 0:
-            save_path = f"models/{run_name}/epoch_{epoch}.pt"
+        metrics = pd.concat([metrics, metrics_row], ignore_index=True, axis=0)
+        if epoch % 50 == 0 or epoch == 10:
+            save_path = f"./models/{run_name}/epoch_{epoch}.pt"
             torch.save(model.state_dict(), save_path)
 
         metrics.to_csv(f"models/{run_name}/metrics.csv", index=False)
         end_time = time.time()
-        loop_time = (end_time - start_time) / 60  # in minutes
+        loop_time = round((end_time - start_time) / 60, 2)  # in minutes
         print(f"Epoch {epoch} completed in {loop_time} minutes")
 
     wandb.finish()
