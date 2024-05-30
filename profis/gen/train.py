@@ -42,18 +42,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
 
     # Define dataframe for logging progress
     epochs_range = range(start_epoch, epochs + start_epoch)
-    metrics = pd.DataFrame(
-        columns=[
-            "epoch",
-            "kld_loss",
-            "kld_weighted",
-            "train_loss",
-            "val_loss",
-            "mean_qed",
-            "mean_fp_recon",
-            "mean_validity",
-        ]
-    )
+    metrics = pd.DataFrame()
 
     # Define loss function and optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
@@ -114,7 +103,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             annealing_agent.step()
 
         # Update metrics df
-        metrics.loc[len(metrics)] = metrics_dict
+        metrics = pd.concat([metrics, metrics_dict])
         if epoch % 10 == 0 or epoch == 5:
             save_path = f"./models/{run_name}/epoch_{epoch}.pt"
             torch.save(model.state_dict(), save_path)
