@@ -9,6 +9,7 @@ import torch
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
+from sklearn.neural_network import MLPClassifier
 
 from profis.utils.finger import encode
 from profis.utils.modelinit import initialize_model
@@ -24,15 +25,15 @@ def main(config_path, verbose=True):
     """
 
     # read config file
-
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(config_path)
+
+    model_type = determine_model_type(config)
     data_path = str(config["RUN"]["data_path"])
     model_path = str(config["RUN"]["model_path"])
     out_path = str(config["RUN"]["output_dir"])
     use_cuda = config.getboolean("RUN", "use_cuda")
     name = str(config["RUN"]["name"])
-    model_type = str(config["INFO"]["model"])
     optimize = config.getboolean("RUN", "optimize_hyperparameters")
 
     start_time = time.time()
@@ -120,13 +121,13 @@ def main(config_path, verbose=True):
             "max_features": max_features,
             "max_leaf_nodes": max_leaf_nodes,
             "random_state": 42,
-            "n_jobs": -1
+            "n_jobs": -1,
         }
         param_grid = {
             "n_estimators": [50, 100, 250, 500],
             "max_features": ["sqrt", "log2", None],
             "max_depth": [3, 6, 9, None],
-            "max_leaf_nodes": [3, 6, 9]
+            "max_leaf_nodes": [3, 6, 9],
         }
         clf = RandomForestClassifier(**params)
 
@@ -149,6 +150,39 @@ def main(config_path, verbose=True):
             "subsample": [0.6, 0.8, 1.0],
         }
         clf = XGBClassifier(**params)
+
+    elif model_type == "MLP":
+        fc1 = int(config["MLP"]["fc1"])
+        fc2 = int(config["MLP"]["fc2"])
+        network_size = [n for n in [fc1, fc2] if n is not None]
+        params = {
+            "hidden_layer_sizes": network_size,
+            "activation": str(config["MLP"]["activation"]),
+            "solver": str(config["MLP"]["optimizer"]),
+            "alpha": float(config["MLP"]["alpha"]),
+            "learning_rate_init": float(config["MLP"]["learning_rate"]),
+            "random_state": 42,
+        }
+        param_grid = [
+            {
+                "hidden_layer_sizes": [[16], [32], [64], [128], [256]],
+                "learning_rate_init": [0.001, 0.0001],
+                "alpha": [0, 0.0001, 0.001],
+            },
+            {
+                "hidden_layer_sizes": [
+                    [16, 8],
+                    [32, 16],
+                    [64, 32],
+                    [128, 64],
+                    [256, 128],
+                ],
+                "learning_rate_init": [0.001, 0.0001],
+                "alpha": [0, 0.0001, 0.001],
+            },
+        ]
+        clf = MLPClassifier(**params)
+
     else:
         raise ValueError(
             f"Model type {model_type} not recognized. The config file may be corrupted."
@@ -156,7 +190,9 @@ def main(config_path, verbose=True):
 
     # hyperparameter optimization and cross-validation
 
-    best_model, test_scores = nested_CV(clf, X, y, param_grid, optimize=optimize, verbose=verbose)
+    best_model, test_scores = nested_CV(
+        clf, X, y, param_grid, optimize=optimize, verbose=verbose
+    )
     clf = best_model
 
     # refit the model with the best hyperparameters
@@ -177,7 +213,7 @@ def main(config_path, verbose=True):
 
     metrics = {
         "roc_auc": round(test_scores.mean(), 4),
-        "std": round(test_scores.std(), 4)
+        "std": round(test_scores.std(), 4),
     }
     metrics_df = pd.DataFrame(metrics, index=[0])
     metrics_df.to_csv(f"{out_path}/{name}/metrics.csv", index=False)
@@ -192,6 +228,26 @@ def main(config_path, verbose=True):
     else:
         print(f"Finished in {round(time_elapsed / 60, 2)} minutes")
     return
+
+
+def determine_model_type(config: configparser.ConfigParser):
+    """
+    Determine the model type from the config file.
+    Args:
+        config (ConfigParser): ConfigParser object.
+    Returns:
+        str: Model type.
+    """
+    detected_sections = [key for key in config if key != "RUN"]
+    if len(detected_sections) == 1 and detected_sections[0] in [
+        "SVC",
+        "RF",
+        "XGB",
+        "MLP",
+    ]:
+        return detected_sections[0]
+    else:
+        raise ValueError("Model type not recognized. The config file may be corrupted.")
 
 
 if __name__ == "__main__":
