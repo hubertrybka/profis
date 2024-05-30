@@ -42,18 +42,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
 
     # Define dataframe for logging progress
     epochs_range = range(start_epoch, epochs + start_epoch)
-    metrics = pd.DataFrame(
-        columns=[
-            "epoch",
-            "kld_loss",
-            "kld_weighted",
-            "train_loss",
-            "val_loss",
-            "mean_qed",
-            "mean_fp_recon",
-            "mean_validity",
-        ]
-    )
+    metrics = pd.DataFrame()
 
     # Define loss function and optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
@@ -86,7 +75,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             epoch_loss += loss.item()
 
         avg_loss = epoch_loss / len(train_loader)
-        val_loss = evaluate(model, val_loader)
+        val_loss = evaluate(model, val_loader, notation=out_encoding)
 
         if epoch % 10 == 0:
             start = time.time()
@@ -114,7 +103,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             annealing_agent.step()
 
         # Update metrics df
-        metrics.loc[len(metrics)] = metrics_dict
+        metrics = pd.concat([metrics, metrics_dict])
         if epoch % 10 == 0 or epoch == 5:
             save_path = f"./models/{run_name}/epoch_{epoch}.pt"
             torch.save(model.state_dict(), save_path)
@@ -127,12 +116,13 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     return None
 
 
-def evaluate(model, val_loader):
+def evaluate(model, val_loader, notation="smiles"):
     """
     Evaluates the model on the validation set
     Args:
         model (nn.Module): EncoderDecoderV3 model
         val_loader (DataLoader): validation set loader
+        notation (str): output notation, can be "smiles", "selfies" or "deepsmiles"
     Returns:
         float: average loss on the validation set
 
@@ -140,7 +130,7 @@ def evaluate(model, val_loader):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
     with torch.no_grad():
-        criterion = CCE()
+        criterion = CCE(notation=notation)
         epoch_loss = 0
         for batch_idx, (X, y) in enumerate(val_loader):
             X = X.to(device)
@@ -177,6 +167,8 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
         raise ValueError("Invalid format, must be 'selfies', 'smiles' or 'deepsmiles'")
 
     model.eval()
+    example_list = []
+
     with torch.no_grad():
         mean_qed = 0
         mean_fp_recon = 0
@@ -189,15 +181,19 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                 vectorizer.devectorize(ohe.detach().cpu().numpy(), remove_special=True)
                 for ohe in output
             ]
+
+            example_list = seq_list[:10] if batch_idx == 0 else example_list
+
             if format == "selfies":
                 smiles_list = [sf.decoder(x) for x in seq_list]
             elif format == "deepsmiles":
                 smiles_list = []
-                for smiles in smiles_list:
+                for x in seq_list:
                     try:
-                        smiles_list.append(converter.decode(smiles))
+                        smiles_list.append(converter.decode(x))
                     except ds.DecodeError:
-                        smiles_list.append(None)
+                        invalid_string = "invalid"
+                        smiles_list.append(invalid_string)
             else:
                 smiles_list = seq_list
 
@@ -205,35 +201,45 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             none_idcs = [i for i, x in enumerate(mol_list) if x is None]
             mol_list_valid = [x for x in mol_list if x is not None]
 
-            # Calculate validity
-            batch_valid = 1 - (len(none_idcs) / len(mol_list))
-            mean_validity += batch_valid
+            if len(mol_list) > 0:
+                # Calculate validity
+                batch_valid = 1 - (len(none_idcs) / len(mol_list))
+                mean_validity += batch_valid
 
-            # Calculate QED
-            batch_qed = 0
-            if len(mol_list_valid) > 0:
-                for mol in mol_list_valid:
-                    batch_qed += QED.qed(mol)
-                batch_qed = batch_qed / len(mol_list_valid)
-                mean_qed += batch_qed
+                # Calculate QED
+                batch_qed = 0
+                if len(mol_list_valid) > 0:
+                    for mol in mol_list_valid:
+                        batch_qed += try_QED(mol)
+                    batch_qed = batch_qed / len(mol_list_valid)
+                    mean_qed += batch_qed
 
-            X = X.detach().cpu()
-            X = np.delete(X, none_idcs, axis=0)
+                X = X.detach().cpu()
+                X = np.delete(X, none_idcs, axis=0)
 
-            # Calculate FP recon score
-            batch_fp_recon = 0
-            for mol, fp in zip(mol_list_valid, X):
-                if fp_type == "ECFP":
-                    batch_fp_recon += ECFP_score(mol, fp)
-                elif fp_type == "KRFP":
-                    batch_fp_recon += KRFP_score(mol, fp)
-            if len(mol_list_valid) > 0:
-                batch_fp_recon = batch_fp_recon / len(mol_list_valid)
-            mean_fp_recon += batch_fp_recon
+                # Calculate FP recon score
+                batch_fp_recon = 0
+                for mol, fp in zip(mol_list_valid, X):
+                    if fp_type == "ECFP":
+                        batch_fp_recon += ECFP_score(mol, fp)
+                    elif fp_type == "KRFP":
+                        batch_fp_recon += KRFP_score(mol, fp)
+                    else:
+                        raise ValueError("Invalid fp_type, must be 'ECFP' or 'KRFP'")
+                    batch_fp_recon = batch_fp_recon / len(mol_list_valid)
+                    mean_fp_recon += batch_fp_recon
+            else:
+                mean_qed = 0
+                mean_fp_recon = 0
+                mean_validity = 0
 
         mean_validity = mean_validity / len(scoring_loader)
         mean_fp_recon = mean_fp_recon / len(scoring_loader)
         mean_qed = mean_qed / len(scoring_loader)
+
+        print("Example decoded sequences:")
+        [print(seq) for seq in example_list]
+
         return mean_qed, mean_fp_recon, mean_validity
 
 
@@ -272,3 +278,18 @@ def ECFP_score(mol, fp: torch.Tensor):
         if ECFP_reconstructed[i] and fp[i]:
             score += 1
     return score / torch.sum(fp).item()
+
+
+def try_QED(mol):
+    """
+    Tries to calculate the QED score for a molecule
+    Args:
+        mol: rdkit mol object
+    Returns:
+        qed: float
+    """
+    try:
+        qed = QED.qed(mol)
+    except:
+        qed = 0
+    return qed

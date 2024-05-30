@@ -1,11 +1,18 @@
-import pandas as pd
-from sklearn.model_selection import KFold, StratifiedKFold, GridSearchCV
-from sklearn.metrics import roc_auc_score, confusion_matrix
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
+from sklearn.metrics import roc_auc_score
 import numpy as np
 
 
 def nested_CV(
-        model, X, y, param_grid, n_splits=5, n_jobs=-1, scoring="roc_auc", optimize=True, verbose=False
+    model,
+    X,
+    y,
+    param_grid,
+    n_splits=5,
+    n_jobs=-1,
+    scoring="roc_auc",
+    optimize=True,
+    verbose=False,
 ):
     """
     Nested CV grid search for the best hyperparameters of the SVC model.
@@ -23,8 +30,8 @@ def nested_CV(
         best_params (dict): dictionary containing the best hyperparameters
     """
 
-    inner_cv = StratifiedKFold(n_splits=n_splits, shuffle=True)
-    outer_cv = StratifiedKFold(n_splits=5, shuffle=True)
+    inner_cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    outer_cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     if optimize:
         # inner loop: parameter search
@@ -35,7 +42,7 @@ def nested_CV(
             scoring=scoring,
             n_jobs=n_jobs,
             verbose=2 if verbose else 0,
-            refit=True
+            refit=True,
         )
     else:
         grid_search = model
