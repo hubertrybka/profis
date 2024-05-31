@@ -242,13 +242,7 @@ def determine_model_type(config: configparser.ConfigParser):
         str: Model type.
     """
     detected_sections = [key for key in config.sections() if key in ["SVC", "RF", "XGB", "MLP"]]
-    print("Detected sections:", detected_sections)
-    if len(detected_sections) == 1 and detected_sections[0] in [
-        "SVM",
-        "RF",
-        "XGB",
-        "MLP",
-    ]:
+    if len(detected_sections) == 1:
         return detected_sections[0]
     else:
         raise ValueError("Model type not recognized. The config file may be corrupted.")
