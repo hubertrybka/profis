@@ -117,10 +117,10 @@ def main(config_path, verbose=True):
         )
         params = {
             "n_estimators": int(config["RF"]["n_estimators"]),
-            "max_depth": max_depth,
             "max_features": max_features,
             "max_leaf_nodes": max_leaf_nodes,
             "random_state": 42,
+            "max_depth": max_depth,
             "n_jobs": -1,
         }
         param_grid = {
@@ -152,8 +152,8 @@ def main(config_path, verbose=True):
         clf = XGBClassifier(**params)
 
     elif model_type == "MLP":
-        fc1 = int(config["MLP"]["fc1"])
-        fc2 = int(config["MLP"]["fc2"])
+        fc1 = int(config["MLP"]["fc1"]) if "fc1" in config["MLP"]["fc1"] else None
+        fc2 = int(config["MLP"]["fc2"]) if "fc2" in config["MLP"]["fc2"] else None
         network_size = [n for n in [fc1, fc2] if n is not None]
         params = {
             "hidden_layer_sizes": network_size,
@@ -162,6 +162,7 @@ def main(config_path, verbose=True):
             "alpha": float(config["MLP"]["alpha"]),
             "learning_rate_init": float(config["MLP"]["learning_rate"]),
             "random_state": 42,
+            "max_iter": 1000
         }
         param_grid = [
             {
@@ -240,7 +241,7 @@ def determine_model_type(config: configparser.ConfigParser):
     Returns:
         str: Model type.
     """
-    detected_sections = [key for key in config if key != "RUN"]
+    detected_sections = [key for key in config if key not in ("RUN", "DEFAULT")]
     if len(detected_sections) == 1 and detected_sections[0] in [
         "SVC",
         "RF",
