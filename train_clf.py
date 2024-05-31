@@ -241,9 +241,10 @@ def determine_model_type(config: configparser.ConfigParser):
     Returns:
         str: Model type.
     """
-    detected_sections = [key for key in config if key not in ("RUN", "DEFAULT")]
+    detected_sections = [key for key in config.sections() if key in ["SVC", "RF", "XGB", "MLP"]]
+    print("Detected sections:", detected_sections)
     if len(detected_sections) == 1 and detected_sections[0] in [
-        "SVC",
+        "SVM",
         "RF",
         "XGB",
         "MLP",
@@ -259,7 +260,6 @@ if __name__ == "__main__":
         "-c",
         "--config",
         type=str,
-        default="config_files/SVC_config.ini",
         help="Path to config file",
     )
     args = parser.parse_args()
