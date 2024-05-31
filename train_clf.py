@@ -190,7 +190,7 @@ def main(config_path, verbose=True):
 
     # hyperparameter optimization and cross-validation
 
-    best_model, test_scores = nested_CV(
+    best_model, accuracy_scores, roc_auc_scores = nested_CV(
         clf, X, y, param_grid, optimize=optimize, verbose=verbose
     )
     clf = best_model
@@ -199,10 +199,10 @@ def main(config_path, verbose=True):
     clf.fit(X, y)
     best_params = clf.get_params()
 
-    print(
-        f"Best hyperparameters: {best_params} with score "
-        f"{round(test_scores.mean(), 4)} +/- {round(test_scores.std(), 4)}"
-    ) if verbose else None
+    if verbose:
+        print(f"Best hyperparameters: {best_params}")
+        print(f"Accuracy: {round(accuracy_scores.mean(), 4)} +/- {round(accuracy_scores.std(), 4)}")
+        print(f"ROC_AUC: {round(roc_auc_scores.mean(), 4)} +/- {round(roc_auc_scores.std(), 4)}")
     with open(f"./{out_path}/{name}/best_params.txt", "w") as file:
         file.write(str(best_params))
 
@@ -212,8 +212,10 @@ def main(config_path, verbose=True):
         pickle.dump(clf, file)
 
     metrics = {
-        "roc_auc": round(test_scores.mean(), 4),
-        "std": round(test_scores.std(), 4),
+        "accuracy": round(accuracy_scores.mean(), 4),
+        "accuracy_std": round(accuracy_scores.std(), 4),
+        "roc_auc": round(roc_auc_scores.mean(), 4),
+        "roc_auc_std": round(roc_auc_scores.std(), 4),
     }
     metrics_df = pd.DataFrame(metrics, index=[0])
     metrics_df.to_csv(f"{out_path}/{name}/metrics.csv", index=False)
