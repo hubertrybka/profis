@@ -124,10 +124,10 @@ def main(config_path, verbose=True):
             "n_jobs": -1,
         }
         param_grid = {
-            "n_estimators": [50, 100, 250, 500],
+            "n_estimators": [100, 250, 500, 1000],
             "max_features": ["sqrt", "log2", None],
             "max_depth": [3, 6, 9, None],
-            "max_leaf_nodes": [3, 6, 9],
+            "max_leaf_nodes": [6, 9, 12, 18],
         }
         clf = RandomForestClassifier(**params)
 
@@ -141,13 +141,15 @@ def main(config_path, verbose=True):
             "subsample": float(config["XGB"]["subsample"]),
             "nthread": int(config["XGB"]["nthread"]),
             "seed": 42,
+            "random_state": 42
         }
         param_grid = {
             "n_estimators": [50, 100, 250, 500],
-            "max_depth": [3, 6, 9, 12],
-            "min_child_weight": [1, 3, 6],
-            "gamma": [0, 0.1, 0.2, 0.3],
+            "max_depth": [9, 12, 18, 24],
+            "min_child_weight": [3, 6, 9, 12],
+            "gamma": [0, 0.1, 0.2],
             "subsample": [0.6, 0.8, 1.0],
+
         }
         clf = XGBClassifier(**params)
 
@@ -166,9 +168,9 @@ def main(config_path, verbose=True):
         }
         param_grid = [
             {
-                "hidden_layer_sizes": [[16], [32], [64], [128], [256]],
-                "learning_rate_init": [0.001, 0.0001],
-                "alpha": [0, 0.0001, 0.001],
+                "hidden_layer_sizes": [[16], [32], [64], [128], [256], [512], [1024]],
+                "learning_rate_init": [0.001, 0.0001, 0.00001],
+                "alpha": [0, 0.0001],
             },
             {
                 "hidden_layer_sizes": [
@@ -177,9 +179,10 @@ def main(config_path, verbose=True):
                     [64, 32],
                     [128, 64],
                     [256, 128],
+                    [512, 256],
                 ],
-                "learning_rate_init": [0.001, 0.0001],
-                "alpha": [0, 0.0001, 0.001],
+                "learning_rate_init": [0.001, 0.0001, 0.00001],
+                "alpha": [0, 0.0001],
             },
         ]
         clf = MLPClassifier(**params)
@@ -241,7 +244,7 @@ def determine_model_type(config: configparser.ConfigParser):
     Returns:
         str: Model type.
     """
-    detected_sections = [key for key in config.sections() if key in ["SVC", "RF", "XGB", "MLP"]]
+    detected_sections = [section for section in config.sections() if section in ["SVC", "RF", "XGB", "MLP"]]
     if len(detected_sections) == 1:
         return detected_sections[0]
     else:
