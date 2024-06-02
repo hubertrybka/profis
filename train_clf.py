@@ -203,11 +203,12 @@ def main(config_path, verbose=True):
     best_params = clf.get_params()
 
     if verbose:
-        print(f"Best hyperparameters: {best_params}")
+        print(f"Best hyperparameters: {best_params}") if optimize else print(f"Hyperparameters: {best_params}")
         print(f"Accuracy: {round(accuracy_scores.mean(), 4)} +/- {round(accuracy_scores.std(), 4)}")
         print(f"ROC_AUC: {round(roc_auc_scores.mean(), 4)} +/- {round(roc_auc_scores.std(), 4)}")
-    with open(f"./{out_path}/{name}/best_params.txt", "w") as file:
-        file.write(str(best_params))
+    if optimize:
+        with open(f"./{out_path}/{name}/best_params.txt", "w") as file:
+            file.write(str(best_params))
 
     # save model
 
