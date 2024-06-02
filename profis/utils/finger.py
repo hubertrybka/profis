@@ -53,6 +53,7 @@ def sparse2dense(sparse, return_numpy=True):
     Convert sparse fingerprint to dense fingerprint
     Args:
         sparse (np.array): sparse fingerprint
+        return_numpy (bool): whether to return numpy array or list
     Returns:
         dense (np.array): dense fingerprint
     """
@@ -112,7 +113,7 @@ def encode(df, model, device, batch=1024):
     return mus, logvars
 
 
-def smiles2sparse_ECFP(smiles, n_bits=1024):
+def smiles2sparse_ECFP(smiles, n_bits=2048):
     """
     Convert SMILES string to sparse ECFP fingerprint
     Args:
@@ -124,3 +125,17 @@ def smiles2sparse_ECFP(smiles, n_bits=1024):
     mol = Chem.MolFromSmiles(smiles)
     fp = np.array(GetMorganFingerprintAsBitVect(mol, 2, nBits=n_bits))
     return np.array(fp)
+
+
+def smiles2dense_ECFP(smiles, n_bits=2048):
+    """
+    Convert SMILES string to dense ECFP fingerprint
+    Args:
+        smiles (str): SMILES string
+        n_bits (int): number of bits in the fingerprint
+    Returns:
+        np.array: dense fingerprint
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    fp = np.array(GetMorganFingerprintAsBitVect(mol, 2, nBits=n_bits))
+    return sparse2dense(fp)
