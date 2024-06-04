@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import rdkit.Chem as Chem
 import selfies as sf
 import deepsmiles as ds
 import torch

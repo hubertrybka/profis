@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-from rdkit import Chem
-from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
 from scipy.spatial.distance import cdist
 from profis.utils.finger import smiles2sparse_ECFP
 import argparse
@@ -14,19 +12,20 @@ class TanimotoSearch:
         data_path (str): path to the dataset
     """
 
-    def __init__(self, data_path):
+    def __init__(self, data_path, verbose=True):
         self.data_path = data_path
         self.smiles = pd.read_parquet(data_path)["smiles"]
         self.XB = np.array([smiles2sparse_ECFP(x, 512) for x in self.smiles]).reshape(
             -1, 512
         )
+        self.verbose = verbose
 
     def __call__(self, smiles, return_similar=False):
         XA = smiles2sparse_ECFP(smiles, 512).reshape(1, -1)
         dists = cdist(XA, self.XB, "jaccard")
         min_dist = np.min(dists)
         top1_similar_smiles = self.smiles[np.argmin(dists)]
-        print(f"Minimal Tanimoto distance: {round(min_dist, 3)}")
+        print(f"Minimal Tanimoto distance: {round(min_dist, 3)}") if self.verbose else None
         if return_similar:
             return min_dist, top1_similar_smiles
         else:
