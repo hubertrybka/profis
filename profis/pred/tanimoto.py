@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-from rdkit import Chem
-from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
 from scipy.spatial.distance import cdist
 from profis.utils.finger import smiles2sparse_ECFP
 import argparse
