@@ -141,7 +141,7 @@ def main(config_path, verbose=True):
             "subsample": float(config["XGB"]["subsample"]),
             "nthread": int(config["XGB"]["nthread"]),
             "seed": 42,
-            "random_state": 42
+            "random_state": 42,
         }
         param_grid = {
             "n_estimators": [50, 100, 250, 500],
@@ -149,7 +149,6 @@ def main(config_path, verbose=True):
             "min_child_weight": [3, 6, 9, 12],
             "gamma": [0, 0.1, 0.2],
             "subsample": [0.6, 0.8, 1.0],
-
         }
         clf = XGBClassifier(**params)
 
@@ -204,11 +203,18 @@ def main(config_path, verbose=True):
     best_params = clf.get_params()
 
     if verbose:
-        print(f"Best hyperparameters: {best_params}")
-        print(f"Accuracy: {round(accuracy_scores.mean(), 4)} +/- {round(accuracy_scores.std(), 4)}")
-        print(f"ROC_AUC: {round(roc_auc_scores.mean(), 4)} +/- {round(roc_auc_scores.std(), 4)}")
-    with open(f"./{out_path}/{name}/best_params.txt", "w") as file:
-        file.write(str(best_params))
+        print(f"Best hyperparameters: {best_params}") if optimize else print(
+            f"Hyperparameters: {best_params}"
+        )
+        print(
+            f"Accuracy: {round(accuracy_scores.mean(), 4)} +/- {round(accuracy_scores.std(), 4)}"
+        )
+        print(
+            f"ROC_AUC: {round(roc_auc_scores.mean(), 4)} +/- {round(roc_auc_scores.std(), 4)}"
+        )
+    if optimize:
+        with open(f"./{out_path}/{name}/best_params.txt", "w") as file:
+            file.write(str(best_params))
 
     # save model
 
@@ -244,7 +250,11 @@ def determine_model_type(config: configparser.ConfigParser):
     Returns:
         str: Model type.
     """
-    detected_sections = [section for section in config.sections() if section in ["SVC", "RF", "XGB", "MLP"]]
+    detected_sections = [
+        section
+        for section in config.sections()
+        if section in ["SVC", "RF", "XGB", "MLP"]
+    ]
     if len(detected_sections) == 1:
         return detected_sections[0]
     else:
