@@ -6,6 +6,7 @@ import queue
 import random
 import time
 import warnings
+import wandb
 
 import numpy as np
 import pandas as pd
@@ -97,6 +98,8 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read(config_path)
 
+    wandb.init(project="search", config=config)
+
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
     n_samples = int(config["SEARCH"]["n_samples"])
@@ -175,6 +178,7 @@ if __name__ == "__main__":
 
         # save the results
         samples = pd.concat(return_list)
+        wandb.log({"samples": len(return_list)})
         samples.to_csv(f"{output_path}/{dirname}/latent_vectors.csv", index=False)
 
     end_time = time.time()
@@ -217,4 +221,5 @@ if __name__ == "__main__":
         text = "\n".join(text)
         f.write(text)
 
+    wandb.finish()
     print(f"Results saved to: {output_path}/{dirname}") if verbosity > 0 else None
