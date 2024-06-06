@@ -105,12 +105,11 @@ if __name__ == "__main__":
     bounds = float(config["SEARCH"]["bounds"])
     latent_size = int(config["SEARCH"]["latent_size"])
     model_path = config["SEARCH"]["model_path"]
-    add_timestamp = config["SEARCH"].getboolean("timestamp")
-
+    add_timestamp = config["SEARCH"].getboolean("add_timestamp")
+    output_path = config["SEARCH"]["output_dir"]
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    dirname = "latent_vectors" + timestamp if add_timestamp else "latent_vectors"
-    output_path = "".join(model_path.split("/")[:-1])
+    dirname = "latent_vectors_" + timestamp if add_timestamp else "latent_vectors"
     os.mkdir(output_path) if not os.path.isdir(output_path) else None
     (
         os.mkdir(f"{output_path}/{dirname}")
