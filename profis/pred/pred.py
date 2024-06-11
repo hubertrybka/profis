@@ -244,19 +244,23 @@ def filter_dataframe(df, config):
     # filter by novelty score
     if config["RUN"]["clf_data_path"] is not None:
         ts = TanimotoSearch(config["RUN"]["clf_data_path"])
-        df_copy["novelty_score"], df_copy["most_similar_from_train"] = df_copy['smiles'].apply(ts(return_similar=True))
+        df_copy["novelty_score"], df_copy["most_similar_from_train"] = df_copy[
+            "smiles"
+        ].apply(ts(return_similar=True))
         if config["NOVELTY_SCORE"]["min"]:
             df_copy = df_copy[
                 df_copy["novelty_score"] >= int(config["NOVELTY_SCORE"]["min"])
-                ]
+            ]
         if config["NOVELTY_SCORE"]["max"]:
             df_copy = df_copy[
                 df_copy["novelty_score"] <= int(config["NOVELTY_SCORE"]["max"])
-                ]
+            ]
         print(f"Number of molecules after filtering by novelty score: {len(df_copy)}")
 
     else:
-        print("Path to the QSAR model training set is not provided or invalid. Skipping novelty filtering.")
+        print(
+            "Path to the QSAR model training set is not provided or invalid. Skipping novelty filtering."
+        )
 
     # drop redundant columns
     df_copy.drop(columns=["mols"], inplace=True)
