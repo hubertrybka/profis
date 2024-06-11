@@ -12,6 +12,7 @@ import pandas as pd
 from bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
 
 from profis.clf.scorer import SKLearnScorer
+from profis.clf.applicability import SCAvgMeasure
 
 
 # suppress scikit-learn warnings
@@ -24,7 +25,7 @@ warnings.warn = warn
 
 def search(config_path, return_list):
     """
-    Perform Bayesian optimization on the latent space with respect to the discriminator output
+    Perform Bayesian optimization on the latent space with respect to the classifier's output class probability.
     Args:
         config_path: path to the config file
         return_list: list to append results to (multiprocessing)
@@ -44,6 +45,9 @@ def search(config_path, return_list):
     # initialize scorer
     scorer = SKLearnScorer(model_path)
 
+    # initialize model distance calculator
+    sc_avg = SCAvgMeasure(clf_path=model_path)
+
     # define bounds
     pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
     bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.2)
@@ -59,6 +63,7 @@ def search(config_path, return_list):
 
     vector_list = []
     score_list = []
+    model_distance_list = []
 
     # run optimization:
     optimizer.maximize(
@@ -68,6 +73,7 @@ def search(config_path, return_list):
     vector = np.array(list(optimizer.max["params"].values()))
 
     score_list.append(float(optimizer.max["target"]))
+    model_distance_list.append(sc_avg(vector))
     vector_list.append(vector)
 
     # append results to return list
@@ -77,6 +83,7 @@ def search(config_path, return_list):
     samples["score"] = score_list
     samples["score"] = samples["score"].astype(float)
     samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
+    samples["model_distance"] = model_distance_list
     return_list.append(samples)
     return
 
