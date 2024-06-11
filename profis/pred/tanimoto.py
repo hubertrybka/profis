@@ -26,7 +26,7 @@ class TanimotoSearch:
         min_dist = np.min(dists)
         top1_similar_smiles = self.smiles[np.argmin(dists)]
         print(
-            f"Minimal Tanimoto distance: {round(min_dist, 3)}"
+            f"Minimal Tanimoto distance: {round(min_dist, 3)}" if self.verbose else None
         ) if self.verbose else None
         if return_similar:
             return min_dist, top1_similar_smiles
