@@ -42,6 +42,9 @@ def search(config_path, return_list):
     bounds = float(config["SEARCH"]["bounds"])
     verbosity = int(config["SEARCH"]["verbosity"])
 
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+
     # initialize scorer
     scorer = SKLearnScorer(model_path)
 

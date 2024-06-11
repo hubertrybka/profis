@@ -27,7 +27,15 @@ def main(config_path):
     file_path = config["RUN"]["data_path"]
     model_path = config["RUN"]["model_path"]
     use_cuda = config["RUN"].getboolean("use_cuda")
+    clf_data_path = config["RUN"]["clf_data_path"]
     verbosity = int(config["RUN"]["verbosity"])
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Data file {file_path} not found")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file {model_path} not found")
+    if clf_data_path and not os.path.exists(clf_data_path):
+        raise FileNotFoundError(f"Classifier train dataset {clf_data_path} not found")
 
     device = torch.device("cuda" if torch.cuda.is_available() and use_cuda else "cpu")
 

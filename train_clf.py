@@ -38,6 +38,13 @@ def main(config_path, verbose=True):
 
     start_time = time.time()
 
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Model config file {config_path} not found")
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(f"Data file {data_path} not found")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file {model_path} not found")
+
     cuda_available = torch.cuda.is_available() and use_cuda
     device = torch.device("cuda" if cuda_available else "cpu")
     print(f"Using device: {device}") if verbose else None
@@ -60,8 +67,6 @@ def main(config_path, verbose=True):
     split = model_path.split("/")
     config_path = "/".join(split[:-1]) + "/hyperparameters.ini"
 
-    if not os.path.exists(config_path):
-        raise ValueError(f"Model config file {config_path} not found")
     print(f"Reading model hyperparameters from {config_path}") if verbose else None
     big_model = initialize_model(config_path, device=device)
 
