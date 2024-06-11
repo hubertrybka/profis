@@ -6,5 +6,5 @@ unzip datasets.zip
 cd ../
 mkdir -p models
 cd models || exit
-wget -O models.zip 'https://www.dropbox.com/scl/fi/5cm7rf49qah1kaee2melp/models.zip?rlkey=mblcvykn0dmn8v77qxxjgn78z&st=l6nis5su&dl=1'
+wget -O models.zip 'https://www.dropbox.com/scl/fi/ajxbnlzk4lcedj8c78fd5/models.zip?rlkey=p3vn4ao8gjup56ulbm46x3nt7&st=2bywko15&dl=1'
 unzip models.zip
