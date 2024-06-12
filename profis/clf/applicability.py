@@ -66,4 +66,3 @@ class SCAvgMeasure:
             np.linalg.norm(self.train_encoded, axis=1) * np.linalg.norm(query)
         )
         return distances
-

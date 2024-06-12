@@ -244,9 +244,9 @@ def filter_dataframe(df, config):
     if config["RUN"]["clf_data_path"] is not None:
         ts = TanimotoSearch(config["RUN"]["clf_data_path"])
 
-        df_copy["novelty_score"] = df_copy[
-            "smiles"
-        ].apply(lambda x: ts(x, return_similar=False))
+        df_copy["novelty_score"] = df_copy["smiles"].apply(
+            lambda x: ts(x, return_similar=False)
+        )
         if config["NOVELTY_SCORE"]["min"]:
             df_copy = df_copy[
                 df_copy["novelty_score"] >= int(config["NOVELTY_SCORE"]["min"])
