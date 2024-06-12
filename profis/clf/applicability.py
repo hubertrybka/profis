@@ -27,22 +27,22 @@ class SCAvgMeasure:
 
     def __call__(self, query, n=3):
         """
-        Calculate the average cosine similarity of the n closest neighbors of a query molecule among the latent
-        representations of the training set.
+        Calculate the average cosine dissimilarity (distance) of the n closest neighbors of a query molecule among the
+        latent representations of the training set compounds.
         Args:
             query: latent representation of the query molecule
             n: number of closest neighbors to consider
         Returns:
-            avg: average cosine similarity of the n closest neighbors
+            scavg: average cosine dissimilarity of the n closest neighbors
         """
-        distances = self.calc_cosine_distance(query)
+        distances = self.calc_cosa_to_train(query)
 
         # find n closest neighbors
         idx = np.argsort(distances)[::-1][:n]
 
         # calculate average similarity of n closest neighbors
-        avg = np.mean(distances[idx])
-        return avg
+        scavg = 1 - np.mean(distances[idx])
+        return scavg
 
     def read_config(self):
         config = configparser.ConfigParser()
@@ -54,5 +54,16 @@ class SCAvgMeasure:
         encoded = encode(data, self.encoder, device=self.device)[0]
         return encoded
 
-    def calc_cosine_distance(self, query):
-        return np.dot(self.train_encoded, query)
+    def calc_cosa_to_train(self, query):
+        """
+        Calculate the cosine similarity of the query molecule to all molecules in the training set.
+        Args:
+            query: latent representation of the query molecule
+        Returns:
+            distances: cosine similarity of the query molecule to all molecules in the training set
+        """
+        distances = np.dot(self.train_encoded, query) / (
+            np.linalg.norm(self.train_encoded, axis=1) * np.linalg.norm(query)
+        )
+        return distances
+
