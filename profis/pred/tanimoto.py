@@ -12,7 +12,7 @@ class TanimotoSearch:
         data_path (str): path to the dataset
     """
 
-    def __init__(self, data_path, verbose=True):
+    def __init__(self, data_path, verbose=False):
         self.data_path = data_path
         self.smiles = pd.read_parquet(data_path)["smiles"]
         self.XB = np.array([smiles2sparse_ECFP(x, 512) for x in self.smiles]).reshape(
@@ -43,4 +43,4 @@ if __name__ == "__main__":
         "-s", "--smiles", type=str, help="SMILES string of the molecule to search for"
     )
     args = parser.parse_args()
-    search = TanimotoSearch(args.data_path)
+    search = TanimotoSearch(args.data_path, verbose=False)
