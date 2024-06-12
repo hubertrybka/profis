@@ -38,20 +38,18 @@ def main(config_path):
         raise FileNotFoundError(f"Classifier train dataset {clf_data_path} not found")
 
     device = torch.device("cuda" if torch.cuda.is_available() and use_cuda else "cpu")
+    print(f"Using {device} device") if verbosity > 0 else None
 
     # get file name
     dirname = os.path.dirname(file_path)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
-    print(f"Using {device} device") if verbosity > 0 else None
-
-    model_epoch = model_path.split("/")[-1]
-    model_config_path = model_path.replace(model_epoch, "hyperparameters.ini")
-    parser = configparser.ConfigParser(allow_no_value=True)
-    parser.read(model_config_path)
-    out_encoding = parser["RUN"]["out_encoding"]
+    model_config_path = model_path.replace("model.pt", "hyperparameters.ini")
+    model_config = configparser.ConfigParser(allow_no_value=True)
     if not os.path.exists(model_config_path):
         raise ValueError(f"Model config file {model_config_path} not found")
+    model_config.read(model_config_path)
+    out_encoding = model_config["RUN"]["out_encoding"]
 
     # load model
 
@@ -80,7 +78,10 @@ def main(config_path):
     )
 
     # filter dataframe
-    df = filter_dataframe(df, config)
+    if len(df) > 0:
+        df = filter_dataframe(df, config)
+    else:
+        print("No valid predictions") if verbosity > 0 else None
 
     # save data as csv
     os.mkdir(f"{dirname}/preds_{timestamp}")
