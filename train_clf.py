@@ -163,7 +163,7 @@ def main(config_path, verbose=True):
             "alpha": float(config["MLP"]["alpha"]),
             "learning_rate_init": float(config["MLP"]["learning_rate"]),
             "random_state": 42,
-            "max_iter": 1000
+            "max_iter": 1000,
         }
         param_grid = [
             {
