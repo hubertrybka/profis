@@ -199,11 +199,11 @@ def main():
 
     parameters_dict = {
         "learning_rate": {"value": 0.0002},
-        "hidden_size": {"values": [512, 1024, 2048]},  # GRU hidden size
+        "hidden_size": {"values": [512, 1024]},  # GRU hidden size
         "encoding_size": {"values": [16, 32]},  # embedding size
-        "dropout": {"values": [0.1, 0.3]},
+        "dropout": {"values": [0, 0.1, 0.3]},
         "kld_weight": {"values": [0.001, 0.005, 0.01]},
-        "teacher_ratio": {"values": [0, 0.2, 0.5, 1]},
+        "teacher_ratio": {"values": [0.2, 0.5, 0.9]},
         "num_layers": {"values": [1, 2]},  # number of GRU layers
         "fc1_size": {"values": [512, 1024, 2048]},
         "fc2_size": {"values": [512, 1024, 2048]},
