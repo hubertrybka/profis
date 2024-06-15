@@ -231,9 +231,9 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                     batch_fp_recon = batch_fp_recon / len(mol_list_valid)
                     mean_fp_recon += batch_fp_recon
             else:
-                mean_qed = 0
-                mean_fp_recon = 0
-                mean_validity = 0
+                mean_qed += 0
+                mean_fp_recon += 0
+                mean_validity += 0
 
         mean_validity = mean_validity / len(scoring_loader)
         mean_fp_recon = mean_fp_recon / len(scoring_loader)
