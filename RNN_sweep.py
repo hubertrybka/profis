@@ -24,7 +24,7 @@ from profis.gen.train import (
 
 def run_train():
     #-----------------------------------------------#
-    batch_size = 64
+    batch_size = 256
     data_path = "data/RNN_dataset_KRFP.parquet"
     # data_path = "data/RNN_dataset_ECFP.parquet"
     fp_len = 4860
@@ -33,14 +33,14 @@ def run_train():
     val_size = round(1 - train_size, 1)
     train_percent = int(train_size * 100)
     val_percent = int(val_size * 100)
-    dataloader_workers = 4
+    dataloader_workers = 3
     # -----------------------------------------------#
 
     train_df = pd.read_parquet(
         data_path.split(".")[0] + f"_train_{train_percent}.parquet"
     )
     val_df = pd.read_parquet(data_path.split(".")[0] + f"_val_{val_percent}.parquet")
-    scoring_df = val_df.sample(frac=0.3, random_state=42)
+    scoring_df = val_df.sample(frac=0.5, random_state=42)
 
     # prepare dataloaders
     if out_encoding == "selfies":
@@ -92,17 +92,16 @@ def run_train():
         num_workers=dataloader_workers,
     )
 
-    wandb.init()
     config = wandb.config
 
-    epochs = 200
+    epochs = 100
     fp_size = 4860
     out_encoding = "smiles"
     kld_backward = True
     start_epoch = 1
     kld_annealing = True
-    annealing_max_epoch = 30
-    annealing_shape = "linear"
+    annealing_max_epoch = 20
+    annealing_shape = "cosine"
     device = torch.device("cuda")
 
     model = ProfisGRU(
@@ -172,6 +171,10 @@ def run_train():
             mean_fp_recon = None
             mean_validity = None
 
+        mean_validity = mean_validity / len(scoring_loader)
+        mean_fp_recon = mean_fp_recon / len(scoring_loader)
+        mean_qed = mean_qed / len(scoring_loader)
+
         metrics_row = {
                 "epoch": epoch,
                 "kld_loss": kld_loss.item(),
@@ -205,8 +208,8 @@ def main():
         "kld_weight": {"values": [0.001, 0.005, 0.01]},
         "teacher_ratio": {"values": [0.2, 0.5, 0.9]},
         "num_layers": {"values": [1, 2]},  # number of GRU layers
-        "fc1_size": {"values": [512, 1024, 2048]},
-        "fc2_size": {"values": [512, 1024, 2048]},
+        "fc1_size": {"values": [1024, 2048]},
+        "fc2_size": {"values": [256, 512, 1024]},
         "fc2_enabled": {"values": [True, False]},
         }
 
