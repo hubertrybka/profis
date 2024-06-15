@@ -92,6 +92,7 @@ def run_train():
         num_workers=dataloader_workers,
     )
 
+    wandb.init()
     config = wandb.config
 
     epochs = 100
