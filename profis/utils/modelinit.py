@@ -33,7 +33,7 @@ def initialize_model(
             config["MODEL"]["teacher_ratio"] if teacher_forcing else 0.0
         ),
         random_seed=42,
-        use_cuda=config.getboolean("RUN", "use_cuda"),
+        use_cuda=True if torch_device.type == "cuda" else False,
         fc1_size=int(config["MODEL"]["fc1_size"]),
         fc2_size=int(config["MODEL"]["fc2_size"]),
         fc3_size=int(config["MODEL"]["fc3_size"]),

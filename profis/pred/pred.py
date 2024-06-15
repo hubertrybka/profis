@@ -52,7 +52,6 @@ def predict(
 
     with torch.no_grad():
         df = pd.DataFrame(columns=["idx", "smiles"])
-        model = model.to(device)
         preds_list = []
         for X in loader:
             latent_tensor = torch.Tensor(X).type(torch.FloatTensor).to(device)
@@ -244,9 +243,10 @@ def filter_dataframe(df, config):
     # filter by novelty score
     if config["RUN"]["clf_data_path"] is not None:
         ts = TanimotoSearch(config["RUN"]["clf_data_path"])
-        df_copy["novelty_score"], df_copy["most_similar_from_train"] = df_copy[
-            "smiles"
-        ].apply(ts(return_similar=True))
+
+        df_copy["novelty_score"] = df_copy["smiles"].apply(
+            lambda x: ts(x, return_similar=False)
+        )
         if config["NOVELTY_SCORE"]["min"]:
             df_copy = df_copy[
                 df_copy["novelty_score"] >= int(config["NOVELTY_SCORE"]["min"])

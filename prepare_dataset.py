@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 import rdkit.Chem as Chem
+import os
 import rdkit.Chem.MolStandardize.rdMolStandardize as rdMolStandardize
 from profis.utils.finger import sparse2dense, smiles2sparse_KRFP, smiles2sparse_ECFP
 from profis.utils.vectorizer import SMILESVectorizer
@@ -22,6 +23,8 @@ def prepare(data_path, gen_ecfp=False, gen_krfp=False, to_dense=True):
         raise ValueError("Please choose only one fingerprint type to generate")
 
     # Load the dataset
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(f"File {data_path} not found")
     df = pd.read_csv(data_path)
 
     # Check the column names

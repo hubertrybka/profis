@@ -43,6 +43,9 @@ def search(config_path, return_list):
     bounds = float(config["SEARCH"]["bounds"])
     verbosity = int(config["SEARCH"]["verbosity"])
 
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+
     # initialize scorer
     scorer = SKLearnScorer(model_path)
 
@@ -84,7 +87,7 @@ def search(config_path, return_list):
     samples["score"] = score_list
     samples["score"] = samples["score"].astype(float)
     samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
-    samples["model_distance"] = model_distance_list
+    samples["distance_to_model"] = model_distance_list
     return_list.append(samples)
     return
 
