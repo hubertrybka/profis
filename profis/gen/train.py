@@ -56,7 +56,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
     criterion = CCE(notation=out_encoding)
 
-    print("Starting Training of GRU")
+    print("VAE-GRU Training")
     print(f"Device: {device}")
 
     # Start training loop

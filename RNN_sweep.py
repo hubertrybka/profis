@@ -117,10 +117,10 @@ def run_train():
         use_cuda=True,
         fc1_size=config.fc1_size,
         fc2_size=config.fc2_size,
-        fc3_size=0,
+        fc3_size=config.fc3_size,
         encoder_activation="relu",
         fc2_enabled=config.fc2_enabled,
-        fc3_enabled=False,
+        fc3_enabled=config.fc3_enabled,
     ).to(device)
 
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
@@ -128,7 +128,7 @@ def run_train():
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     criterion = CCE(notation=out_encoding)
 
-    print("Starting Training of GRU")
+    print("VAE-GRU Training")
     print(f"Device: {device}")
 
     # Start training loop
@@ -172,10 +172,6 @@ def run_train():
             mean_fp_recon = None
             mean_validity = None
 
-        mean_validity = mean_validity / len(scoring_loader)
-        mean_fp_recon = mean_fp_recon / len(scoring_loader)
-        mean_qed = mean_qed / len(scoring_loader)
-
         metrics_row = {
                 "epoch": epoch,
                 "kld_loss": kld_loss.item(),
@@ -204,14 +200,16 @@ def main():
     parameters_dict = {
         "learning_rate": {"value": 0.0002},
         "hidden_size": {"values": [512, 1024]},  # GRU hidden size
-        "encoding_size": {"values": [16, 32]},  # embedding size
+        "encoding_size": {"value": 32},  # embedding size
         "dropout": {"values": [0, 0.1, 0.3]},
         "kld_weight": {"values": [0.001, 0.005, 0.01]},
         "teacher_ratio": {"values": [0.2, 0.5, 0.9]},
         "num_layers": {"values": [1, 2]},  # number of GRU layers
         "fc1_size": {"values": [1024, 2048]},
-        "fc2_size": {"values": [256, 512, 1024]},
-        "fc2_enabled": {"values": [True, False]},
+        "fc2_size": {"values": [512, 1024]},
+        "fc3_size": {"values": [256, 512]},
+        "fc2_enabled": {"value": [True]},
+        "fc3_enabled": {"values": [True, False]},
         }
 
     sweep_config = {
