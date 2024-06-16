@@ -89,28 +89,30 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             mean_fp_recon = None
             mean_validity = None
 
-        metrics_dict = {
-            "epoch": epoch,
-            "kld_loss": kld_loss.item(),
-            "kld_weighted": kld_weighted.item(),
-            "train_loss": avg_loss,
-            "val_loss": val_loss,
-            "mean_qed": mean_qed,
-            "mean_fp_recon": mean_fp_recon,
-            "mean_validity": mean_validity,
-        }
+        metrics_row = pd.DataFrame(
+            {
+                "epoch": [epoch],
+                "kld_loss": [kld_loss.item()],
+                "kld_weighted": [kld_weighted.item()],
+                "train_loss": [avg_loss],
+                "val_loss": [val_loss],
+                "mean_qed": [mean_qed],
+                "mean_fp_recon": [mean_fp_recon],
+                "mean_validity": [mean_validity],
+            }
+        )
         if kld_annealing:
             annealing_agent.step()
 
         # Update metrics df
-        metrics = pd.concat([metrics, metrics_dict])
-        if epoch % 10 == 0 or epoch == 5:
+        metrics = pd.concat([metrics, metrics_row], ignore_index=True, axis=0)
+        if epoch % 50 == 0 or epoch == 10:
             save_path = f"./models/{run_name}/epoch_{epoch}.pt"
             torch.save(model.state_dict(), save_path)
 
         metrics.to_csv(f"./models/{run_name}/metrics.csv", index=False)
         end_time = time.time()
-        loop_time = (end_time - start_time) / 60  # in minutes
+        loop_time = round((end_time - start_time) / 60, 2)  # in minutes
         print(f"Epoch {epoch} completed in {loop_time} minutes")
 
     return None
@@ -229,9 +231,9 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                     batch_fp_recon = batch_fp_recon / len(mol_list_valid)
                     mean_fp_recon += batch_fp_recon
             else:
-                mean_qed = 0
-                mean_fp_recon = 0
-                mean_validity = 0
+                mean_qed += 0
+                mean_fp_recon += 0
+                mean_validity += 0
 
         mean_validity = mean_validity / len(scoring_loader)
         mean_fp_recon = mean_fp_recon / len(scoring_loader)

@@ -7,6 +7,7 @@ import deepsmiles as ds
 from rdkit import Chem
 from rdkit.Chem import QED, rdMolDescriptors
 from torch.utils.data import DataLoader
+from profis.pred.tanimoto import TanimotoSearch
 
 from profis.utils.vectorizer import (
     SELFIESVectorizer,
@@ -51,7 +52,6 @@ def predict(
 
     with torch.no_grad():
         df = pd.DataFrame(columns=["idx", "smiles"])
-        model = model.to(device)
         preds_list = []
         for X in loader:
             latent_tensor = torch.Tensor(X).type(torch.FloatTensor).to(device)
@@ -138,57 +138,57 @@ def filter_dataframe(df, config):
 
     # filter by largest ring
     df_copy["largest_ring"] = df_copy["mols"].apply(get_largest_ring)
-    if config["RING_SIZE"]["min"].lower():
+    if config["RING_SIZE"]["min"]:
         df_copy = df_copy[df_copy["largest_ring"] >= int(config["RING_SIZE"]["min"])]
-    if config["RING_SIZE"]["max"].lower():
+    if config["RING_SIZE"]["max"]:
         df_copy = df_copy[df_copy["largest_ring"] <= int(config["RING_SIZE"]["max"])]
     print(f"Number of molecules after filtering by ring size: {len(df_copy)}")
 
     # filter by num_rings
     df_copy["num_rings"] = df_copy["mols"].apply(Chem.rdMolDescriptors.CalcNumRings)
-    if config["NUM_RINGS"]["min"].lower():
+    if config["NUM_RINGS"]["min"]:
         df_copy = df_copy[df_copy["num_rings"] >= int(config["NUM_RINGS"]["min"])]
-    if config["NUM_RINGS"]["max"].lower():
+    if config["NUM_RINGS"]["max"]:
         df_copy = df_copy[df_copy["num_rings"] <= int(config["NUM_RINGS"]["max"])]
     print(f"Number of molecules after filtering by num_rings: {len(df_copy)}")
 
     # filter by QED
     df_copy["qed"] = df_copy["mols"].apply(QED.default)
-    if config["QED"]["min"].lower():
+    if config["QED"]["min"]:
         df_copy = df_copy[df_copy["qed"] >= float(config["QED"]["min"])]
-    if config["QED"]["max"].lower():
+    if config["QED"]["max"]:
         df_copy = df_copy[df_copy["qed"] <= float(config["QED"]["max"])]
     print(f"Number of molecules after filtering by QED: {len(df_copy)}")
 
     # filter by mol_wt
     df_copy["mol_wt"] = df_copy["mols"].apply(Chem.rdMolDescriptors.CalcExactMolWt)
-    if config["MOL_WEIGHT"]["min"].lower():
+    if config["MOL_WEIGHT"]["min"]:
         df_copy = df_copy[df_copy["mol_wt"] >= float(config["MOL_WEIGHT"]["min"])]
-    if config["MOL_WEIGHT"]["max"].lower():
+    if config["MOL_WEIGHT"]["max"]:
         df_copy = df_copy[df_copy["mol_wt"] <= float(config["MOL_WEIGHT"]["max"])]
     print(f"Number of molecules after filtering by mol_wt: {len(df_copy)}")
 
     # filter by num_HBA
     df_copy["num_HBA"] = df_copy["mols"].apply(rdMolDescriptors.CalcNumHBA)
-    if config["NUM_HBA"]["min"].lower():
+    if config["NUM_HBA"]["min"]:
         df_copy = df_copy[df_copy["num_HBA"] >= int(config["NUM_HBA"]["min"])]
-    if config["NUM_HBA"]["max"].lower():
+    if config["NUM_HBA"]["max"]:
         df_copy = df_copy[df_copy["num_HBA"] <= int(config["NUM_HBA"]["max"])]
     print(f"Number of molecules after filtering by num_HBA: {len(df_copy)}")
 
     # filter by num_HBD
     df_copy["num_HBD"] = df_copy["mols"].apply(rdMolDescriptors.CalcNumHBD)
-    if config["NUM_HBD"]["min"].lower():
+    if config["NUM_HBD"]["min"]:
         df_copy = df_copy[df_copy["num_HBD"] >= int(config["NUM_HBD"]["min"])]
-    if config["NUM_HBD"]["max"].lower():
+    if config["NUM_HBD"]["max"]:
         df_copy = df_copy[df_copy["num_HBD"] <= int(config["NUM_HBD"]["max"])]
     print(f"Number of molecules after filtering by num_HBD: {len(df_copy)}")
 
     # filter by logP
     df_copy["logP"] = df_copy["mols"].apply(Crippen.MolLogP)
-    if config["LOGP"]["min"].lower():
+    if config["LOGP"]["min"]:
         df_copy = df_copy[df_copy["logP"] >= float(config["LOGP"]["min"])]
-    if config["LOGP"]["max"].lower():
+    if config["LOGP"]["max"]:
         df_copy = df_copy[df_copy["logP"] <= float(config["LOGP"]["max"])]
     print(f"Number of molecules after filtering by logP: {len(df_copy)}")
 
@@ -196,11 +196,11 @@ def filter_dataframe(df, config):
     df_copy["num_rotatable_bonds"] = df_copy["mols"].apply(
         rdMolDescriptors.CalcNumRotatableBonds
     )
-    if config["NUM_ROT_BONDS"]["min"].lower():
+    if config["NUM_ROT_BONDS"]["min"]:
         df_copy = df_copy[
             df_copy["num_rotatable_bonds"] >= int(config["NUM_ROTATABLE_BONDS"]["min"])
         ]
-    if config["NUM_ROT_BONDS"]["max"].lower():
+    if config["NUM_ROT_BONDS"]["max"]:
         df_copy = df_copy[
             df_copy["num_rotatable_bonds"] <= int(config["NUM_ROTATABLE_BONDS"]["max"])
         ]
@@ -208,9 +208,9 @@ def filter_dataframe(df, config):
 
     # filter by TPSA
     df_copy["tpsa"] = df_copy["mols"].apply(rdMolDescriptors.CalcTPSA)
-    if config["TPSA"]["min"].lower():
+    if config["TPSA"]["min"]:
         df_copy = df_copy[df_copy["tpsa"] >= float(config["TPSA"]["min"])]
-    if config["TPSA"]["max"].lower():
+    if config["TPSA"]["max"]:
         df_copy = df_copy[df_copy["tpsa"] <= float(config["TPSA"]["max"])]
     print(f"Number of molecules after filtering by TPSA: {len(df_copy)}")
 
@@ -218,11 +218,11 @@ def filter_dataframe(df, config):
     df_copy["bridgehead_atoms"] = df_copy["mols"].apply(
         rdMolDescriptors.CalcNumBridgeheadAtoms
     )
-    if config["NUM_BRIDGEHEAD_ATOMS"]["min"].lower():
+    if config["NUM_BRIDGEHEAD_ATOMS"]["min"]:
         df_copy = df_copy[
             df_copy["bridgehead_atoms"] >= int(config["NUM_BRIDGEHEAD_ATOMS"]["min"])
         ]
-    if config["NUM_BRIDGEHEAD_ATOMS"]["max"].lower():
+    if config["NUM_BRIDGEHEAD_ATOMS"]["max"]:
         df_copy = df_copy[
             df_copy["bridgehead_atoms"] <= int(config["NUM_BRIDGEHEAD_ATOMS"]["max"])
         ]
@@ -230,15 +230,37 @@ def filter_dataframe(df, config):
 
     # filter by spiro atoms
     df_copy["spiro_atoms"] = df_copy["mols"].apply(rdMolDescriptors.CalcNumSpiroAtoms)
-    if config["NUM_SPIRO_ATOMS"]["min"].lower():
+    if config["NUM_SPIRO_ATOMS"]["min"]:
         df_copy = df_copy[
             df_copy["spiro_atoms"] >= int(config["NUM_SPIRO_ATOMS"]["min"])
         ]
-    if config["NUM_SPIRO_ATOMS"]["max"].lower():
+    if config["NUM_SPIRO_ATOMS"]["max"]:
         df_copy = df_copy[
             df_copy["spiro_atoms"] <= int(config["NUM_SPIRO_ATOMS"]["max"])
         ]
     print(f"Number of molecules after filtering by spiro atoms: {len(df_copy)}")
+
+    # filter by novelty score
+    if config["RUN"]["clf_data_path"] is not None:
+        ts = TanimotoSearch(config["RUN"]["clf_data_path"])
+
+        df_copy["novelty_score"] = df_copy["smiles"].apply(
+            lambda x: ts(x, return_similar=False)
+        )
+        if config["NOVELTY_SCORE"]["min"]:
+            df_copy = df_copy[
+                df_copy["novelty_score"] >= int(config["NOVELTY_SCORE"]["min"])
+            ]
+        if config["NOVELTY_SCORE"]["max"]:
+            df_copy = df_copy[
+                df_copy["novelty_score"] <= int(config["NOVELTY_SCORE"]["max"])
+            ]
+        print(f"Number of molecules after filtering by novelty score: {len(df_copy)}")
+
+    else:
+        print(
+            "Path to the QSAR model training set is not provided or invalid. Skipping novelty filtering."
+        )
 
     # drop redundant columns
     df_copy.drop(columns=["mols"], inplace=True)

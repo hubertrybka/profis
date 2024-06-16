@@ -12,6 +12,7 @@ import pandas as pd
 from bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
 
 from profis.clf.scorer import SKLearnScorer
+from profis.clf.applicability import SCAvgMeasure
 
 
 # suppress scikit-learn warnings
@@ -24,7 +25,7 @@ warnings.warn = warn
 
 def search(config_path, return_list):
     """
-    Perform Bayesian optimization on the latent space with respect to the discriminator output
+    Perform Bayesian optimization on the latent space with respect to the classifier's output class probability.
     Args:
         config_path: path to the config file
         return_list: list to append results to (multiprocessing)
@@ -41,8 +42,14 @@ def search(config_path, return_list):
     bounds = float(config["SEARCH"]["bounds"])
     verbosity = int(config["SEARCH"]["verbosity"])
 
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+
     # initialize scorer
     scorer = SKLearnScorer(model_path)
+
+    # initialize model distance calculator
+    sc_avg = SCAvgMeasure(clf_path=model_path)
 
     # define bounds
     pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
@@ -59,6 +66,7 @@ def search(config_path, return_list):
 
     vector_list = []
     score_list = []
+    model_distance_list = []
 
     # run optimization:
     optimizer.maximize(
@@ -68,6 +76,7 @@ def search(config_path, return_list):
     vector = np.array(list(optimizer.max["params"].values()))
 
     score_list.append(float(optimizer.max["target"]))
+    model_distance_list.append(sc_avg(vector))
     vector_list.append(vector)
 
     # append results to return list
@@ -77,6 +86,7 @@ def search(config_path, return_list):
     samples["score"] = score_list
     samples["score"] = samples["score"].astype(float)
     samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
+    samples["distance_to_model"] = model_distance_list
     return_list.append(samples)
     return
 
@@ -105,12 +115,11 @@ if __name__ == "__main__":
     bounds = float(config["SEARCH"]["bounds"])
     latent_size = int(config["SEARCH"]["latent_size"])
     model_path = config["SEARCH"]["model_path"]
-    add_timestamp = config["SEARCH"].getboolean("timestamp")
-
+    add_timestamp = config["SEARCH"].getboolean("add_timestamp")
+    output_path = config["SEARCH"]["output_dir"]
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    dirname = "latent_vectors" + timestamp if add_timestamp else "latent_vectors"
-    output_path = "".join(model_path.split("/")[:-1])
+    dirname = "latent_vectors_" + timestamp if add_timestamp else "latent_vectors"
     os.mkdir(output_path) if not os.path.isdir(output_path) else None
     (
         os.mkdir(f"{output_path}/{dirname}")

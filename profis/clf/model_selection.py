@@ -1,5 +1,5 @@
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, accuracy_score
 import numpy as np
 
 
@@ -48,7 +48,8 @@ def nested_CV(
         grid_search = model
 
     # outer loop: model evaluation
-    test_scores = []
+    roc_auc_scores = []
+    accuracy_scores = []
     eval_scores = []
     models = []
 
@@ -58,8 +59,10 @@ def nested_CV(
 
         grid_search.fit(X_train, y_train)
         pred_test = grid_search.predict_proba(X_test)
-        auc_test = roc_auc_score(y_test, pred_test[:, 1])
-        test_scores.append(auc_test)
+        pred_test_threshold = pred_test[:, 1] > 0.5
+        accuracy_scores.append(accuracy_score(y_test, pred_test_threshold))
+        roc_auc_scores.append(roc_auc_score(y_test, pred_test[:, 1]))
+
         if optimize:
             eval_scores.append(grid_search.best_score_)
             models.append(grid_search.best_estimator_)
@@ -69,4 +72,4 @@ def nested_CV(
     else:
         best_model = model
 
-    return best_model, np.array(test_scores)
+    return best_model, np.array(accuracy_scores), np.array(roc_auc_scores)

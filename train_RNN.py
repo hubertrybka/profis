@@ -49,6 +49,8 @@ def main(config_path):
 
     # read dataset
 
+    if not os.path.isfile(data_path):
+        raise FileNotFoundError(f"Dataset file {data_path} not found")
     dataset = pd.read_parquet(data_path)
 
     # create a directory for this model weights if not there

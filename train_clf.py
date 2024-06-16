@@ -38,6 +38,13 @@ def main(config_path, verbose=True):
 
     start_time = time.time()
 
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Model config file {config_path} not found")
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(f"Data file {data_path} not found")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file {model_path} not found")
+
     cuda_available = torch.cuda.is_available() and use_cuda
     device = torch.device("cuda" if cuda_available else "cpu")
     print(f"Using device: {device}") if verbose else None
@@ -60,8 +67,6 @@ def main(config_path, verbose=True):
     split = model_path.split("/")
     config_path = "/".join(split[:-1]) + "/hyperparameters.ini"
 
-    if not os.path.exists(config_path):
-        raise ValueError(f"Model config file {config_path} not found")
     print(f"Reading model hyperparameters from {config_path}") if verbose else None
     big_model = initialize_model(config_path, device=device)
 
@@ -124,10 +129,10 @@ def main(config_path, verbose=True):
             "n_jobs": -1,
         }
         param_grid = {
-            "n_estimators": [50, 100, 250, 500],
+            "n_estimators": [100, 250, 500, 1000],
             "max_features": ["sqrt", "log2", None],
             "max_depth": [3, 6, 9, None],
-            "max_leaf_nodes": [3, 6, 9],
+            "max_leaf_nodes": [6, 9, 12, 18],
         }
         clf = RandomForestClassifier(**params)
 
@@ -141,12 +146,13 @@ def main(config_path, verbose=True):
             "subsample": float(config["XGB"]["subsample"]),
             "nthread": int(config["XGB"]["nthread"]),
             "seed": 42,
+            "random_state": 42,
         }
         param_grid = {
             "n_estimators": [50, 100, 250, 500],
-            "max_depth": [3, 6, 9, 12],
-            "min_child_weight": [1, 3, 6],
-            "gamma": [0, 0.1, 0.2, 0.3],
+            "max_depth": [9, 12, 18, 24],
+            "min_child_weight": [3, 6, 9, 12],
+            "gamma": [0, 0.1, 0.2],
             "subsample": [0.6, 0.8, 1.0],
         }
         clf = XGBClassifier(**params)
@@ -165,9 +171,9 @@ def main(config_path, verbose=True):
         }
         param_grid = [
             {
-                "hidden_layer_sizes": [[16], [32], [64], [128], [256]],
-                "learning_rate_init": [0.001, 0.0001],
-                "alpha": [0, 0.0001, 0.001],
+                "hidden_layer_sizes": [[16], [32], [64], [128], [256], [512], [1024]],
+                "learning_rate_init": [0.001, 0.0001, 0.00001],
+                "alpha": [0, 0.0001],
             },
             {
                 "hidden_layer_sizes": [
@@ -176,9 +182,10 @@ def main(config_path, verbose=True):
                     [64, 32],
                     [128, 64],
                     [256, 128],
+                    [512, 256],
                 ],
-                "learning_rate_init": [0.001, 0.0001],
-                "alpha": [0, 0.0001, 0.001],
+                "learning_rate_init": [0.001, 0.0001, 0.00001],
+                "alpha": [0, 0.0001],
             },
         ]
         clf = MLPClassifier(**params)
@@ -190,7 +197,7 @@ def main(config_path, verbose=True):
 
     # hyperparameter optimization and cross-validation
 
-    best_model, test_scores = nested_CV(
+    best_model, accuracy_scores, roc_auc_scores = nested_CV(
         clf, X, y, param_grid, optimize=optimize, verbose=verbose
     )
     clf = best_model
@@ -199,12 +206,19 @@ def main(config_path, verbose=True):
     clf.fit(X, y)
     best_params = clf.get_params()
 
-    print(
-        f"Best hyperparameters: {best_params} with score "
-        f"{round(test_scores.mean(), 4)} +/- {round(test_scores.std(), 4)}"
-    ) if verbose else None
-    with open(f"./{out_path}/{name}/best_params.txt", "w") as file:
-        file.write(str(best_params))
+    if verbose:
+        print(f"Best hyperparameters: {best_params}") if optimize else print(
+            f"Hyperparameters: {best_params}"
+        )
+        print(
+            f"Accuracy: {round(accuracy_scores.mean(), 4)} +/- {round(accuracy_scores.std(), 4)}"
+        )
+        print(
+            f"ROC_AUC: {round(roc_auc_scores.mean(), 4)} +/- {round(roc_auc_scores.std(), 4)}"
+        )
+    if optimize:
+        with open(f"./{out_path}/{name}/best_params.txt", "w") as file:
+            file.write(str(best_params))
 
     # save model
 
@@ -212,8 +226,10 @@ def main(config_path, verbose=True):
         pickle.dump(clf, file)
 
     metrics = {
-        "roc_auc": round(test_scores.mean(), 4),
-        "std": round(test_scores.std(), 4),
+        "accuracy": round(accuracy_scores.mean(), 4),
+        "accuracy_std": round(accuracy_scores.std(), 4),
+        "roc_auc": round(roc_auc_scores.mean(), 4),
+        "roc_auc_std": round(roc_auc_scores.std(), 4),
     }
     metrics_df = pd.DataFrame(metrics, index=[0])
     metrics_df.to_csv(f"{out_path}/{name}/metrics.csv", index=False)
@@ -238,13 +254,12 @@ def determine_model_type(config: configparser.ConfigParser):
     Returns:
         str: Model type.
     """
-    detected_sections = [key for key in config if key != "RUN"]
-    if len(detected_sections) == 1 and detected_sections[0] in [
-        "SVC",
-        "RF",
-        "XGB",
-        "MLP",
-    ]:
+    detected_sections = [
+        section
+        for section in config.sections()
+        if section in ["SVC", "RF", "XGB", "MLP"]
+    ]
+    if len(detected_sections) == 1:
         return detected_sections[0]
     else:
         raise ValueError("Model type not recognized. The config file may be corrupted.")

@@ -1,81 +1,46 @@
 import numpy as np
 import pandas as pd
-from rdkit import Chem
-from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
 from scipy.spatial.distance import cdist
-
-
-def fp2bitstring(fp):
-    """
-    Changes the molecules fingerprint into a bitstring.
-
-    Args:
-        fp (list): list containing active bits of a vector
-
-    Returns:
-        bitstring (str): bitstring vector
-
-    """
-    bitstring = ["0"] * 512
-    for x in fp:
-        bitstring[x] = "1"
-    return "".join(bitstring)
-
-
-def get_smiles_from_train(idx):
-    """
-    Returns smiles of a molecule by idx in the training set
-
-    Args:
-        idx (int): index of the molecule in the training set
-
-    Returns:
-        smiles (str): SMILES of the molecule
-    """
-
-    data_path = "data/train_data/train_dataset.parquet"
-    train = pd.read_parquet(data_path).smiles
-    smiles = train.iloc[idx]
-    return smiles
-
-
-def unpack(ls: list):
-    vec = np.zeros(512)
-    vec[ls] = 1
-    return vec
+from profis.utils.finger import smiles2sparse_ECFP
+import argparse
 
 
 class TanimotoSearch:
     """
-    Tanimoto search class for searching similar molecules in the training set.
+    Class for calculating the minimal Tanimoto distance between a query molecule and a dataset of molecules.
+    Parameters:
+        data_path (str): path to the dataset
     """
 
-    def __init__(self, return_smiles=False, progress_bar=True):
-        data_path = "data/train_morgan_512bits.parquet"
-        self.fps = pd.read_parquet(data_path).fps.apply(eval)
-        self.fps = np.array(self.fps.apply(unpack).to_list()).reshape(-1, 512)
-        self.fps = pd.DataFrame(self.fps, columns=[f"FP_{i + 1}" for i in range(512)])
-        self.return_smiles = return_smiles
-        self.progress_bar = progress_bar
-        self.XB = self.fps.to_numpy(dtype=np.int8)
+    def __init__(self, data_path, verbose=False):
+        self.data_path = data_path
+        self.smiles = pd.read_parquet(data_path)["smiles"]
+        self.XB = np.array([smiles2sparse_ECFP(x, 512) for x in self.smiles]).reshape(
+            -1, 512
+        )
+        self.verbose = verbose
 
-    def __call__(self, mols):
-        if isinstance(mols, list):
-            query_fps = [
-                Chem.rdMolDescriptors.GetMorganFingerprintAsBitVect(
-                    x, radius=2, nBits=512
-                )
-                for x in mols
-            ]
-            ln = len(query_fps)
+    def __call__(self, smiles, return_similar=False):
+        XA = smiles2sparse_ECFP(smiles, 512).reshape(1, -1)
+        dists = cdist(XA, self.XB, "jaccard")
+        min_dist = np.min(dists)
+        top1_similar_smiles = self.smiles[np.argmin(dists)]
+        print(
+            f"Minimal Tanimoto distance: {round(min_dist, 3)}" if self.verbose else None
+        ) if self.verbose else None
+        if return_similar:
+            return min_dist, top1_similar_smiles
         else:
-            query_fps = Chem.rdMolDescriptors.GetMorganFingerprintAsBitVect(
-                mols, radius=2, nBits=512
-            )
-            ln = 1
-        XA = np.array(query_fps, dtype=np.int8).reshape(-1, 512)
-        distances = cdist(XA, self.XB, metric="jaccard").T
-        tanimoto_indices = distances.argmax(axis=0)
-        select_array = [[x, y] for x, y in zip(tanimoto_indices, range(ln))]
-        metrics = [distances[x[0], x[1]] for x in select_array]
-        return metrics
+            return min_dist
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Plot molecular properties")
+    parser.add_argument(
+        "-d", "--data_path", type=str, help="Path to the classifier training set"
+    )
+    parser.add_argument(
+        "-s", "--smiles", type=str, help="SMILES string of the molecule to search for"
+    )
+    args = parser.parse_args()
+    search = TanimotoSearch(args.data_path, verbose=False)
