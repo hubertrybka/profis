@@ -28,3 +28,4 @@ profis/gen/__pycache__/__init__.cpython-311.pyc
 profis/clf/__pycache__/model_selection.cpython-311.pyc
 data/RNN_dataset_KRFP_val_10.parquet
 data/RNN_dataset_KRFP_train_90.parquet
+wandb
