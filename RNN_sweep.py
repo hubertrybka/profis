@@ -199,7 +199,7 @@ def main():
 
     parameters_dict = {
         "learning_rate": {"value": 0.0002},
-        "hidden_size": {"values": [512, 1024]},  # GRU hidden size
+        "hidden_size": {"values": [512, 1024, 2048]},  # GRU hidden size
         "encoding_size": {"value": 32},  # embedding size
         "dropout": {"values": [0, 0.1, 0.3]},
         "kld_weight": {"values": [0.001, 0.005, 0.01]},
