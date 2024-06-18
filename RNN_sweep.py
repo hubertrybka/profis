@@ -200,10 +200,10 @@ def main(sweep_id=None):
 
     parameters_dict = {
         "learning_rate": {"value": 0.0002},
-        "hidden_size": {"values": [512, 1024, 2048]},  # GRU hidden size
+        "hidden_size": {"values": [1024, 2048]},  # GRU hidden size
         "encoding_size": {"value": 32},  # embedding size
         "dropout": {"values": [0, 0.1, 0.3]},
-        "kld_weight": {"values": [0.001, 0.01, 0.1]},
+        "kld_weight": {"value": [0.1]},
         "teacher_ratio": {"values": [0.2, 0.5, 0.9]},
         "num_layers": {"values": [1, 2]},  # number of GRU layers
         "fc1_size": {"values": [1024, 2048]},
@@ -220,7 +220,7 @@ def main(sweep_id=None):
         "early_terminate": {"type": "hyperband", "min_iter": 20, "eta": 1.5, "strict": True}
     }
 
-    if id is None:
+    if sweep_id is None:
         sweep_id = wandb.sweep(sweep_config, project="RNN_sweep")
     wandb.agent(
         sweep_id,
