@@ -203,11 +203,11 @@ def main(sweep_id=None):
         "hidden_size": {"values": [1024, 2048]},  # GRU hidden size
         "encoding_size": {"value": 32},  # embedding size
         "dropout": {"values": [0, 0.1, 0.3]},
-        "kld_weight": {"value": [0.1]},
+        "kld_weight": {"values": [0.1, 1]},
         "teacher_ratio": {"values": [0.2, 0.5, 0.9]},
-        "num_layers": {"values": [1, 2]},  # number of GRU layers
+        "num_layers": {"value": 2},  # number of GRU layers
         "fc1_size": {"values": [1024, 2048]},
-        "fc2_size": {"values": [512, 1024]},
+        "fc2_size": {"value": 1024},
         "fc3_size": {"values": [256, 512]},
         "fc2_enabled": {"value": [True]},
         "fc3_enabled": {"values": [True, False]},
@@ -227,7 +227,7 @@ def main(sweep_id=None):
         function=run_train,
         project="RNN_sweep"
     )
-
+    
     return None
 
 
