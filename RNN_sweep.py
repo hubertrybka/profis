@@ -41,7 +41,7 @@ def run_train():
         data_path.split(".")[0] + f"_train_{train_percent}.parquet"
     )
     val_df = pd.read_parquet(data_path.split(".")[0] + f"_val_{val_percent}.parquet")
-    scoring_df = val_df.sample(frac=0.5, random_state=42)
+    scoring_df = val_df
 
     # prepare dataloaders
     if out_encoding == "selfies":
@@ -203,10 +203,10 @@ def main(sweep_id=None):
         "hidden_size": {"values": [1024, 2048]},  # GRU hidden size
         "encoding_size": {"value": 32},  # embedding size
         "dropout": {"values": [0, 0.1, 0.3]},
-        "kld_weight": {"values": [0.1, 1]},
+        "kld_weight": {"values": [0.01, 0.05]},
         "teacher_ratio": {"values": [0.2, 0.5, 0.9]},
         "num_layers": {"value": 2},  # number of GRU layers
-        "fc1_size": {"values": [1024, 2048]},
+        "fc1_size": {"values": [2048]},
         "fc2_size": {"value": 1024},
         "fc3_size": {"values": [256, 512]},
         "fc2_enabled": {"value": [True]},
@@ -216,8 +216,8 @@ def main(sweep_id=None):
     sweep_config = {
         "method": "bayes",
         "parameters": parameters_dict,
-        "metric": {"goal": "minimize", "name": "val_loss"},
-        "early_terminate": {"type": "hyperband", "min_iter": 20, "eta": 1.5, "strict": True}
+        "metric": {"goal": "maximize", "name": "mean_validity"},
+        "early_terminate": {"type": "hyperband", "min_iter": 40, "eta": 1.5, "strict": True}
     }
 
     if sweep_id is None:
@@ -227,7 +227,7 @@ def main(sweep_id=None):
         function=run_train,
         project="RNN_sweep"
     )
-    
+
     return None
 
 
