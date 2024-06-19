@@ -227,7 +227,7 @@ def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
                         batch_fp_recon += KRFP_score(mol, fp)
                     else:
                         raise ValueError("Invalid fp_type, must be 'ECFP' or 'KRFP'")
-                print("Valid molecules: ", len(mol_list_valid))
+                print(f"Valid molecules in batch {batch_idx}: ", len(mol_list_valid))
                 mean_fp_recon += batch_fp_recon / len(mol_list_valid)
             else:
                 mean_qed += 0
