@@ -41,7 +41,7 @@ def run_train():
         data_path.split(".")[0] + f"_train_{train_percent}.parquet"
     )
     val_df = pd.read_parquet(data_path.split(".")[0] + f"_val_{val_percent}.parquet")
-    scoring_df = val_df.sample(frac=0.5, random_state=42)
+    scoring_df = val_df
 
     # prepare dataloaders
     if out_encoding == "selfies":
@@ -158,15 +158,20 @@ def run_train():
         avg_loss = epoch_loss / len(train_loader)
         val_loss = evaluate(model, val_loader, notation=out_encoding)
 
-        start = time.time()
-        mean_qed, mean_fp_recon, mean_validity = get_scores(
-            model,
-            scoring_loader,
-            fp_type=("KRFP" if fp_size == 4860 else "ECFP"),
-            format=out_encoding,
-        )
-        end = time.time()
-        print(f"QED + fp evaluated in {(end - start) / 60} minutes")
+        if epoch % 5 == 0:
+            start = time.time()
+            mean_qed, mean_fp_recon, mean_validity = get_scores(
+                model,
+                scoring_loader,
+                fp_type=("KRFP" if fp_size == 4860 else "ECFP"),
+                format=out_encoding,
+            )
+            end = time.time()
+            print(f"QED + fp evaluated in {(end - start) / 60} minutes")
+        else:
+            mean_qed = None
+            mean_fp_recon = None
+            mean_validity = None
 
         metrics_row = {
                 "epoch": epoch,
