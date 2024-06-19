@@ -144,7 +144,7 @@ def evaluate(model, val_loader, notation="smiles"):
         return avg_loss
 
 
-def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
+def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
     """
     Calculates the QED and FP reconstruction score for the model
     Args:
@@ -229,6 +229,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                     else:
                         raise ValueError("Invalid fp_type, must be 'ECFP' or 'KRFP'")
                     batch_fp_recon = batch_fp_recon / len(mol_list_valid)
+                    print("Valid molecules: ", len(mol_list_valid))
                     mean_fp_recon += batch_fp_recon
             else:
                 mean_qed += 0
