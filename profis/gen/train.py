@@ -97,8 +97,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             mean_fp_recon = None
             mean_validity = None
 
-        metrics_row = pd.DataFrame(
-            {
+        metrics_dict = {
                 "epoch": [epoch],
                 "kld_loss": [kld_loss.item()],
                 "kld_weighted": [kld_weighted.item()],
@@ -108,7 +107,8 @@ def train(config, model, train_loader, val_loader, scoring_loader):
                 "mean_fp_recon": [mean_fp_recon],
                 "mean_validity": [mean_validity],
             }
-        )
+
+        metrics_row = pd.DataFrame(metrics_dict)
 
         if kld_annealing:
             annealing_agent.step()
