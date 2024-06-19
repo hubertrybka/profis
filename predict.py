@@ -29,6 +29,7 @@ def main(config_path):
     use_cuda = config["RUN"].getboolean("use_cuda")
     clf_data_path = config["RUN"]["clf_data_path"]
     verbosity = int(config["RUN"]["verbosity"])
+    n_trials = int(config["RUN"]["n_trials"])
 
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Data file {file_path} not found")
@@ -59,13 +60,13 @@ def main(config_path):
 
     # load data
     if file_path.endswith(".csv"):
-        query_df = pd.read_csv(file_path)
+        query_df = pd.read_csv(file_path)[:100]
     elif file_path.endswith(".parquet"):
-        query_df = pd.read_parquet(file_path)
+        query_df = pd.read_parquet(file_path)[:100]
     else:
         raise ValueError("Data file format not supported (must be .csv or .parquet)")
 
-    for col in ["smiles", "label", "score", "activity", "norm"]:
+    for col in ["smiles", "label", "score", "activity", "norm", "distance_to_model"]:
         if col in query_df.columns:
             query_df = query_df.drop(columns=[col])
     input_vector = query_df.to_numpy()
@@ -74,7 +75,12 @@ def main(config_path):
     # get predictions
     print(f"Getting predictions for file {file_path}...") if verbosity > 1 else None
     df = predict(
-        model, input_vector, device=device, format=out_encoding, batch_size=512
+        model,
+        input_vector,
+        device=device,
+        format=out_encoding,
+        batch_size=512,
+        n_trials=n_trials,
     )
 
     # filter dataframe
@@ -82,6 +88,11 @@ def main(config_path):
         df = filter_dataframe(df, config)
     else:
         print("No valid predictions") if verbosity > 0 else None
+
+    # save stats
+    stats = pd.DataFrame()
+    stats["mean_qed"] = df["qed"].mean()
+
 
     # save data as csv
     os.mkdir(f"{dirname}/preds_{timestamp}")
