@@ -8,12 +8,18 @@ from rdkit import Chem
 from rdkit.Chem import QED, rdMolDescriptors
 from torch.utils.data import DataLoader
 from profis.pred.tanimoto import TanimotoSearch
+from scipy.special import softmax
 
 from profis.utils.vectorizer import (
     SELFIESVectorizer,
     SMILESVectorizer,
     DeepSMILESVectorizer,
 )
+
+# Suppress RDKit warnings
+from rdkit import RDLogger
+
+RDLogger.DisableLog("rdApp.*")
 
 
 def predict(
@@ -22,11 +28,12 @@ def predict(
     device: torch.device = torch.device("cpu"),
     format: str = "smiles",
     batch_size: int = 512,
+    n_trials: int = 1000,
 ):
     """
     Generate molecules from latent vectors
     Args:
-        model (torch.nn.Module): EncoderDecoderV3 model.
+        model (torch.nn.Module): ProfisGRU model.
         latent_vectors (np.array): numpy array of latent vectors. Shape = (n_samples, latent_size).
         device: device to use for prediction. Can be 'cpu' or 'cuda'.
         format: format of the output. Can be 'smiles', 'selfies' or 'deepsmiles'.
@@ -60,24 +67,24 @@ def predict(
             preds_list.append(preds)
         preds_concat = np.concatenate(preds_list)
 
+        if format == "smiles":
+            df["smiles"] = [
+                stochastic_decoder(vector, vectorizer, n_trials=n_trials)
+                for vector in preds_concat
+            ]
+
         if format == "selfies":
             df["selfies"] = [
-                vectorizer.devectorize(pred, remove_special=True)
+                vectorizer.devectorize(pred, remove_special=True, reduction="sample")
                 for pred in preds_concat
             ]
             df["smiles"] = df["selfies"].apply(sf.decoder)
-        elif format == "smiles":
-            df["smiles"] = [
-                vectorizer.devectorize(pred, remove_special=True)
-                for pred in preds_concat
-            ]
+
         elif format == "deepsmiles":
-            converter = ds.Converter(rings=True, branches=True)
-            df["deepsmiles"] = [
-                vectorizer.devectorize(pred, remove_special=True)
-                for pred in preds_concat
+            df["smiles"] = [
+                stochastic_decoder(vector, vectorizer, n_trials=n_trials)
+                for vector in preds_concat
             ]
-            df["smiles"] = df["deepsmiles"].apply(converter.decode)
 
         df["idx"] = range(len(df))
         df = df.sort_values(by=["idx"])
@@ -266,3 +273,52 @@ def filter_dataframe(df, config):
     df_copy.drop(columns=["mols"], inplace=True)
 
     return df_copy
+
+
+def stochastic_decoder(vector, vectorizer, n_trials=1000):
+    """
+    Decodes model output to sequence strings using a stochastic decoder.
+    Out of n_samples generated strings that are valid, the one with the highest joint probability is returned.
+    Args:
+        vector (np.array): Latent vector.
+        vectorizer (Vectorizer): vectorizer object.
+        n_trials (int): Number of samples to generate.
+    Returns:
+        str: SMILES string.
+    """
+    vector = softmax(vector, axis=-1)
+
+    if isinstance(vectorizer, DeepSMILESVectorizer):
+        converter = ds.Converter(rings=True, branches=True)
+    else:
+        converter = None
+
+    seq_list = []
+    score_list = []
+
+    for _ in range(n_trials):
+        decoded, joint_prob = vectorizer.devectorize_and_score(
+            vector, remove_special=True
+        )
+        seq_list.append(decoded)
+        score_list.append(joint_prob)
+
+    if isinstance(vectorizer, DeepSMILESVectorizer):
+        smiles_list = np.array([converter.decode(decoded) for decoded in seq_list])
+
+    else:
+        smiles_list = np.array(seq_list)
+
+    valid_idcs = [
+        idx for idx, smiles in enumerate(smiles_list) if Chem.MolFromSmiles(smiles)
+    ]
+    score_list = np.array(score_list)
+
+    print(f"Number of valid SMILES: {len(valid_idcs)}")
+    if valid_idcs:
+        possible_smiles = smiles_list[valid_idcs]
+        best_smile = possible_smiles[np.argmax(score_list[valid_idcs])]
+        print(f"Best SMILES: {best_smile}, score: {np.max(score_list)}")
+        return best_smile
+    else:
+        return "invalid"
