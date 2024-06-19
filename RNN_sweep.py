@@ -97,7 +97,6 @@ def run_train():
     config = wandb.config
 
     epochs = 100
-    fp_size = 4860
     out_encoding = "smiles"
     kld_backward = True
     start_epoch = 1
@@ -107,7 +106,7 @@ def run_train():
     device = torch.device("cuda")
 
     model = ProfisGRU(
-        fp_size=fp_size,
+        fp_size=fp_len,
         encoding_size=config.encoding_size,
         hidden_size=config.hidden_size,
         num_layers=config.num_layers,
@@ -163,7 +162,7 @@ def run_train():
             mean_qed, mean_fp_recon, mean_validity = get_scores(
                 model,
                 scoring_loader,
-                fp_type=("KRFP" if fp_size == 4860 else "ECFP"),
+                fp_type=("KRFP" if fp_len == 4860 else "ECFP"),
                 format=out_encoding,
             )
             end = time.time()
@@ -203,7 +202,7 @@ def main(sweep_id=None):
         "hidden_size": {"values": [1024, 2048]},  # GRU hidden size
         "encoding_size": {"value": 32},  # embedding size
         "dropout": {"values": [0, 0.1, 0.3]},
-        "kld_weight": {"values": [0.001, 0.05, 0.01]},
+        "kld_weight": {"values": [0.001, 0.005, 0.01]},
         "teacher_ratio": {"values": [0.2, 0.5, 0.7, 0.9]},
         "num_layers": {"value": 2},  # number of GRU layers
         "fc1_size": {"values": [1024, 2048]},

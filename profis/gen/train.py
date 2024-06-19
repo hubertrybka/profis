@@ -216,7 +216,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
 
             if len(mol_list) > 0:
                 # Calculate validity
-                batch_valid = 1 - (len(none_idcs) / len(mol_list))
+                batch_valid = len(mol_list_valid) / len(mol_list)
                 mean_validity += batch_valid
 
                 # Calculate QED
@@ -239,8 +239,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                         batch_fp_recon += KRFP_score(mol, fp)
                     else:
                         raise ValueError("Invalid fp_type, must be 'ECFP' or 'KRFP'")
-                    batch_fp_recon = batch_fp_recon / len(mol_list_valid)
-                    mean_fp_recon += batch_fp_recon
+                mean_fp_recon += batch_fp_recon / len(mol_list_valid)
             else:
                 mean_qed += 0
                 mean_fp_recon += 0
