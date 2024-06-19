@@ -41,7 +41,7 @@ def run_train():
         data_path.split(".")[0] + f"_train_{train_percent}.parquet"
     )
     val_df = pd.read_parquet(data_path.split(".")[0] + f"_val_{val_percent}.parquet")
-    scoring_df = val_df
+    scoring_df = val_df.sample(frac=0.5, random_state=42)
 
     # prepare dataloaders
     if out_encoding == "selfies":
@@ -158,20 +158,15 @@ def run_train():
         avg_loss = epoch_loss / len(train_loader)
         val_loss = evaluate(model, val_loader, notation=out_encoding)
 
-        if epoch % 5 == 0:
-            start = time.time()
-            mean_qed, mean_fp_recon, mean_validity = get_scores(
-                model,
-                scoring_loader,
-                fp_type=("KRFP" if fp_size == 4860 else "ECFP"),
-                format=out_encoding,
-            )
-            end = time.time()
-            print(f"QED + fp evaluated in {(end - start) / 60} minutes")
-        else:
-            mean_qed = None
-            mean_fp_recon = None
-            mean_validity = None
+        start = time.time()
+        mean_qed, mean_fp_recon, mean_validity = get_scores(
+            model,
+            scoring_loader,
+            fp_type=("KRFP" if fp_size == 4860 else "ECFP"),
+            format=out_encoding,
+        )
+        end = time.time()
+        print(f"QED + fp evaluated in {(end - start) / 60} minutes")
 
         metrics_row = {
                 "epoch": epoch,
@@ -204,7 +199,7 @@ def main(sweep_id=None):
         "encoding_size": {"value": 32},  # embedding size
         "dropout": {"values": [0, 0.1, 0.3]},
         "kld_weight": {"values": [0.001, 0.05, 0.01]},
-        "teacher_ratio": {"values": [0.2, 0.5, 0.9]},
+        "teacher_ratio": {"values": [0.2, 0.5, 0.7, 0.9]},
         "num_layers": {"value": 2},  # number of GRU layers
         "fc1_size": {"values": [1024, 2048]},
         "fc2_size": {"value": 1024},
