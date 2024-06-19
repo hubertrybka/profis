@@ -217,6 +217,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             if len(mol_list) > 0:
                 # Calculate validity
                 batch_valid = len(mol_list_valid) / len(mol_list)
+                print(f"Valid molecules in batch {batch_idx}: ", len(mol_list_valid))
                 mean_validity += batch_valid
 
                 # Calculate QED
