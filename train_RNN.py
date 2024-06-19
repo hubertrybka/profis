@@ -17,6 +17,11 @@ from profis.utils.vectorizer import (
     DeepSMILESVectorizer,
 )
 
+# Suppress RDKit warnings
+from rdkit import RDLogger
+
+RDLogger.DisableLog("rdApp.*")
+
 
 def main(config_path):
     """
