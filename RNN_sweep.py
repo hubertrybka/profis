@@ -215,7 +215,7 @@ def main(sweep_id=None):
     sweep_config = {
         "method": "bayes",
         "parameters": parameters_dict,
-        "metric": {"goal": "minimize", "name": "mean_validity"},
+        "metric": {"goal": "maximize", "name": "mean_validity"},
         "early_terminate": {"type": "hyperband", "min_iter": 40, "eta": 1.5, "strict": True}
     }
 
