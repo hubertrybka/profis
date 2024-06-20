@@ -203,9 +203,9 @@ def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
             none_idcs = [i for i, x in enumerate(mol_list) if x is None]
             mol_list_valid = [x for x in mol_list if x is not None]
 
-            if len(mol_list) > 0:
+            if mol_list_valid:
                 # Calculate validity
-                batch_valid = 1 - (len(none_idcs) / len(mol_list))
+                batch_valid = len(mol_list_valid)/len(mol_list)
                 mean_validity += batch_valid
 
                 # Calculate QED
@@ -227,7 +227,6 @@ def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
                         batch_fp_recon += KRFP_score(mol, fp)
                     else:
                         raise ValueError("Invalid fp_type, must be 'ECFP' or 'KRFP'")
-                print(f"Valid molecules in batch {batch_idx}: ", len(mol_list_valid))
                 mean_fp_recon += batch_fp_recon / len(mol_list_valid)
             else:
                 mean_qed += 0
