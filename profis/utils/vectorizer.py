@@ -78,6 +78,30 @@ class Vectorizer:
         else:
             return "".join([self.idx2char[i] for i in idx])
 
+    def devectorize_and_score(self, ohe, remove_special=False):
+        """
+        Devectorize a numpy array of shape (len(sequence), len(charset)) to a string in a stochastic manner.
+        Returns the string and the joint probability of the sequence.
+        Args:
+            ohe (numpy.ndarray): one-hot encoded sequence as numpy array
+            remove_special (bool): remove special tokens
+        Returns:
+            sequence_str (string): string
+        """
+        sequence_str = ""
+        log_joint_prob = 0
+        for j in range(ohe.shape[0]):
+            idx = np.random.choice(np.arange(len(self.alphabet)), p=ohe[j, :])
+            if remove_special and (
+                self.idx2char[idx] == "[start]"
+                or self.idx2char[idx] == "[end]"
+                or self.idx2char[idx] == "[nop]"
+            ):
+                continue
+            sequence_str += self.idx2char[idx]
+            log_joint_prob += np.log(ohe[j, idx])
+        return sequence_str, log_joint_prob
+
     @staticmethod
     def split(selfie):
         raise NotImplementedError

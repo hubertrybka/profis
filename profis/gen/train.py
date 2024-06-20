@@ -97,8 +97,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             mean_fp_recon = None
             mean_validity = None
 
-        metrics_row = pd.DataFrame(
-            {
+        metrics_dict = {
                 "epoch": [epoch],
                 "kld_loss": [kld_loss.item()],
                 "kld_weighted": [kld_weighted.item()],
@@ -108,7 +107,8 @@ def train(config, model, train_loader, val_loader, scoring_loader):
                 "mean_fp_recon": [mean_fp_recon],
                 "mean_validity": [mean_validity],
             }
-        )
+
+        metrics_row = pd.DataFrame(metrics_dict)
 
         if kld_annealing:
             annealing_agent.step()
@@ -216,7 +216,8 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
 
             if len(mol_list) > 0:
                 # Calculate validity
-                batch_valid = 1 - (len(none_idcs) / len(mol_list))
+                batch_valid = len(mol_list_valid) / len(mol_list)
+                print(f"Valid molecules in batch {batch_idx}: ", len(mol_list_valid))
                 mean_validity += batch_valid
 
                 # Calculate QED
@@ -239,8 +240,7 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                         batch_fp_recon += KRFP_score(mol, fp)
                     else:
                         raise ValueError("Invalid fp_type, must be 'ECFP' or 'KRFP'")
-                    batch_fp_recon = batch_fp_recon / len(mol_list_valid)
-                    mean_fp_recon += batch_fp_recon
+                mean_fp_recon += batch_fp_recon / len(mol_list_valid)
             else:
                 mean_qed += 0
                 mean_fp_recon += 0
