@@ -155,7 +155,7 @@ def evaluate(model, val_loader, notation="smiles"):
         return avg_loss
 
 
-def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
+def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
     """
     Calculates the QED and FP reconstruction score for the model
     Args:
@@ -214,10 +214,9 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
             none_idcs = [i for i, x in enumerate(mol_list) if x is None]
             mol_list_valid = [x for x in mol_list if x is not None]
 
-            if len(mol_list) > 0:
+            if mol_list_valid:
                 # Calculate validity
-                batch_valid = len(mol_list_valid) / len(mol_list)
-                print(f"Valid molecules in batch {batch_idx}: ", len(mol_list_valid))
+                batch_valid = len(mol_list_valid)/len(mol_list)
                 mean_validity += batch_valid
 
                 # Calculate QED
@@ -228,10 +227,9 @@ def get_scores(model, scoring_loader, fp_type="ECFP", format="selfies"):
                     batch_qed = batch_qed / len(mol_list_valid)
                     mean_qed += batch_qed
 
+                # Calculate FP recon score
                 X = X.detach().cpu()
                 X = np.delete(X, none_idcs, axis=0)
-
-                # Calculate FP recon score
                 batch_fp_recon = 0
                 for mol, fp in zip(mol_list_valid, X):
                     if fp_type == "ECFP":

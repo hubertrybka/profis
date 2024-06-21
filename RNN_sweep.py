@@ -205,7 +205,7 @@ def main(sweep_id=None):
         "kld_weight": {"values": [0.001, 0.005, 0.01]},
         "teacher_ratio": {"values": [0.2, 0.5, 0.7, 0.9]},
         "num_layers": {"value": 2},  # number of GRU layers
-        "fc1_size": {"values": [1024, 2048]},
+        "fc1_size": {"values": [2048]},
         "fc2_size": {"value": 1024},
         "fc3_size": {"values": [256, 512]},
         "fc2_enabled": {"value": [True]},
@@ -226,7 +226,7 @@ def main(sweep_id=None):
         function=run_train,
         project="RNN_sweep"
     )
-    
+
     return None
 
 
