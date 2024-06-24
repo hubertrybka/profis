@@ -67,11 +67,10 @@ def main(config_path):
         config.write(configfile)
 
     # if train_dataset not generated, perform scaffold split
-    print("Performing scaffold split...")
-
     if not os.path.isfile(
         data_path.split(".")[0] + f"_train_{train_percent}.parquet"
     ) or not os.path.isfile(data_path.split(".")[0] + f"_val_{val_percent}.parquet"):
+        print("Performing scaffold split...")
         train_df, val_df = scaffold_split(
             dataset, train_size, seed=random_seed, shuffle=True
         )
