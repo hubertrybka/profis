@@ -98,14 +98,14 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             mean_validity = None
 
         metrics_dict = {
-                "epoch": [epoch],
-                "kld_loss": [kld_loss.item()],
-                "kld_weighted": [kld_weighted.item()],
-                "train_loss": [avg_loss],
-                "val_loss": [val_loss],
-                "mean_qed": [mean_qed],
-                "mean_fp_recon": [mean_fp_recon],
-                "mean_validity": [mean_validity],
+                "epoch": epoch,
+                "kld_loss": kld_loss.item(),
+                "kld_weighted": kld_weighted.item(),
+                "train_loss": avg_loss,
+                "val_loss": val_loss,
+                "mean_qed": mean_qed,
+                "mean_fp_recon": mean_fp_recon,
+                "mean_validity": mean_validity,
             }
 
         metrics_row = pd.DataFrame(metrics_dict)
