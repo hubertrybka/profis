@@ -108,7 +108,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
                 "mean_validity": mean_validity,
             }
 
-        metrics_row = pd.DataFrame(metrics_dict)
+        metrics_row = pd.DataFrame(metrics_dict, index=[0])
 
         if kld_annealing:
             annealing_agent.step()
