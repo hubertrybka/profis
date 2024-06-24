@@ -1,10 +1,8 @@
-data/d2_ECFP_100nM.parquet
-data/d2_KRFP_100nM.parquet
 data/datasets.zip
-data/RNN_dataset_ECFP.parquet
-data/RNN_dataset_KRFP.parquet
 models
 results
-data/RNN_dataset_ECFP_val_10.parquet
-data/RNN_dataset_KRFP_val_10.parquet
+wandb
+.idea
+*.pyc
+*.parquet
 *.ipynb
