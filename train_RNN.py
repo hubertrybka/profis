@@ -61,6 +61,8 @@ def main(config_path):
     # create a directory for this model weights if not there
 
     if not os.path.isdir(f"models/{run_name}"):
+        if not os.path.isdir("models"):
+            os.mkdir("models")
         os.mkdir(f"models/{run_name}")
 
     with open(f"models/{run_name}/hyperparameters.ini", "w") as configfile:
