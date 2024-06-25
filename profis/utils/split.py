@@ -1,24 +1,24 @@
 import random
 
 from rdkit.Chem.Scaffolds import MurckoScaffold
+from rdkit import Chem
 
 
 # scaffold split
 
 
-def get_scaffold(smiles, include_chirality=False):
+def get_scaffold(smiles):
     """
-    Returns the Murcko scaffold of a molecule
+    Returns generic Murcko scaffold of a molecule
     Args:
         smiles (str): SMILES of the molecule
-        include_chirality (bool): whether to include chirality in the scaffold
     Returns:
         scaffold (str): SMILES of the scaffold
     """
-    scaffold = MurckoScaffold.MurckoScaffoldSmiles(
-        smiles=smiles, includeChirality=include_chirality
-    )
-    return scaffold
+    mol = Chem.MolFromSmiles(smiles)
+    scaffold = MurckoScaffold.GetScaffoldForMol(mol)
+    generic_scaffold = MurckoScaffold.MakeScaffoldGeneric(scaffold)
+    return Chem.MolToSmiles(generic_scaffold)
 
 
 def scaffold_split(df, frac_train, shuffle=False, seed=42):
@@ -38,7 +38,7 @@ def scaffold_split(df, frac_train, shuffle=False, seed=42):
 
     all_scaffolds = {}
     for i, smiles in enumerate(df.smiles):
-        scaffold = get_scaffold(smiles, include_chirality=True)
+        scaffold = get_scaffold(smiles)
         if scaffold not in all_scaffolds:
             all_scaffolds[scaffold] = [i]
         else:
