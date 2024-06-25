@@ -87,7 +87,6 @@ def predict(
             ]
 
         df["idx"] = range(len(df))
-        df = df.sort_values(by=["idx"])
     return df
 
 
@@ -293,32 +292,29 @@ def stochastic_decoder(vector, vectorizer, n_trials=1000):
     else:
         converter = None
 
-    seq_list = []
-    score_list = []
+    seq_list = np.array(n_trials * [None])
+    score_list = np.array(n_trials * [None])
 
-    for _ in range(n_trials):
+    for i in range(n_trials):
         decoded, joint_prob = vectorizer.devectorize_and_score(
             vector, remove_special=True
         )
-        seq_list.append(decoded)
-        score_list.append(joint_prob)
+        seq_list[i] = decoded
+        score_list[i] = joint_prob
 
     if isinstance(vectorizer, DeepSMILESVectorizer):
-        smiles_list = np.array([converter.decode(decoded) for decoded in seq_list])
+        smiles_list = np.apply_along_axis(converter.decode, 0, seq_list)
 
     else:
-        smiles_list = np.array(seq_list)
+        smiles_list = seq_list
 
     valid_idcs = [
         idx for idx, smiles in enumerate(smiles_list) if Chem.MolFromSmiles(smiles)
     ]
-    score_list = np.array(score_list)
 
-    print(f"Number of valid SMILES: {len(valid_idcs)}")
     if valid_idcs:
         possible_smiles = smiles_list[valid_idcs]
         best_smile = possible_smiles[np.argmax(score_list[valid_idcs])]
-        print(f"Best SMILES: {best_smile}, score: {np.max(score_list)}")
         return best_smile
     else:
         return "invalid"

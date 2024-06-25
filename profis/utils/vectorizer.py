@@ -63,10 +63,6 @@ class Vectorizer:
             sequence_str += self.idx2char[idx]
         return sequence_str
 
-    def idxize(self, sequence, no_special=False):
-        if no_special:
-            splited = self.split(sequence)
-
     def deidxize(self, idx, no_special=False):
         if no_special:
             selfie = []
@@ -87,9 +83,10 @@ class Vectorizer:
             remove_special (bool): remove special tokens
         Returns:
             sequence_str (string): string
+            score (float): log joint probability of the sequence
         """
         sequence_str = ""
-        log_joint_prob = 0
+        probabilities = np.ones(ohe.shape[0])
         for j in range(ohe.shape[0]):
             idx = np.random.choice(np.arange(len(self.alphabet)), p=ohe[j, :])
             if remove_special and (
@@ -99,8 +96,8 @@ class Vectorizer:
             ):
                 continue
             sequence_str += self.idx2char[idx]
-            log_joint_prob += np.log(ohe[j, idx])
-        return sequence_str, log_joint_prob
+            probabilities[j] = ohe[j, idx]
+        return sequence_str, np.sum(np.log(probabilities))
 
     @staticmethod
     def split(selfie):

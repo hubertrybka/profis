@@ -3,6 +3,7 @@ import configparser
 import os
 import pickle
 import time
+import json
 
 import pandas as pd
 import torch
@@ -94,14 +95,8 @@ def main(config_path, verbose=True):
             "probability": True,
             "max_iter": -1,
         }
-        param_grid = [
-            {"C": [0.1, 1, 10, 100], "kernel": ["linear"]},
-            {
-                "C": [0.1, 1, 10, 100, 500],
-                "gamma": [0.001, 0.0001, "scale"],
-                "kernel": ["rbf"],
-            },
-        ]
+        with open('data/SVM_param_grid.json', 'r') as f:
+            param_grid = json.load(f)
         clf = SVC(**params)
 
     elif model_type == "RF":
@@ -128,12 +123,8 @@ def main(config_path, verbose=True):
             "max_depth": max_depth,
             "n_jobs": -1,
         }
-        param_grid = {
-            "n_estimators": [100, 250, 500, 1000],
-            "max_features": ["sqrt", "log2", None],
-            "max_depth": [3, 6, 9, None],
-            "max_leaf_nodes": [6, 9, 12, 18],
-        }
+        with open('data/RF_param_grid.json', 'r') as f:
+            param_grid = json.load(f)
         clf = RandomForestClassifier(**params)
 
     elif model_type == "XGB":
@@ -148,19 +139,14 @@ def main(config_path, verbose=True):
             "seed": 42,
             "random_state": 42,
         }
-        param_grid = {
-            "n_estimators": [50, 100, 250, 500],
-            "max_depth": [9, 12, 18, 24],
-            "min_child_weight": [3, 6, 9, 12],
-            "gamma": [0, 0.1, 0.2],
-            "subsample": [0.6, 0.8, 1.0],
-        }
+        with open('data/XGB_param_grid.json', 'r') as f:
+            param_grid = json.load(f)
         clf = XGBClassifier(**params)
 
     elif model_type == "MLP":
-        fc1 = int(config["MLP"]["fc1"]) if "fc1" in config["MLP"]["fc1"] else None
-        fc2 = int(config["MLP"]["fc2"]) if "fc2" in config["MLP"]["fc2"] else None
-        network_size = [n for n in [fc1, fc2] if n is not None]
+        fc1 = config["MLP"]["fc1"]
+        fc2 = config["MLP"]["fc2"]
+        network_size = [int(n) for n in [fc1, fc2] if n != '']
         params = {
             "hidden_layer_sizes": network_size,
             "activation": str(config["MLP"]["activation"]),
@@ -170,25 +156,8 @@ def main(config_path, verbose=True):
             "random_state": 42,
             "max_iter": 1000,
         }
-        param_grid = [
-            {
-                "hidden_layer_sizes": [[16], [32], [64], [128], [256], [512], [1024]],
-                "learning_rate_init": [0.001, 0.0001, 0.00001],
-                "alpha": [0, 0.0001],
-            },
-            {
-                "hidden_layer_sizes": [
-                    [16, 8],
-                    [32, 16],
-                    [64, 32],
-                    [128, 64],
-                    [256, 128],
-                    [512, 256],
-                ],
-                "learning_rate_init": [0.001, 0.0001, 0.00001],
-                "alpha": [0, 0.0001],
-            },
-        ]
+        with open('data/MLP_param_grid.json', 'r') as f:
+            param_grid = json.load(f)
         clf = MLPClassifier(**params)
 
     else:
