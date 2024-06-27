@@ -4,6 +4,7 @@ import os
 import pickle
 import time
 import json
+import wandb
 
 import pandas as pd
 import torch
@@ -175,6 +176,7 @@ def main(config_path, verbose=True):
     # refit the model with the best hyperparameters
     clf.fit(X, y)
     best_params = clf.get_params()
+    wandb.init(config=best_params, project='clf', name=name)
 
     if verbose:
         print(f"Best hyperparameters: {best_params}") if optimize else print(
@@ -201,6 +203,7 @@ def main(config_path, verbose=True):
         "roc_auc": round(roc_auc_scores.mean(), 4),
         "roc_auc_std": round(roc_auc_scores.std(), 4),
     }
+    wandb.log(metrics)
     metrics_df = pd.DataFrame(metrics, index=[0])
     metrics_df.to_csv(f"{out_path}/{name}/metrics.csv", index=False)
 
