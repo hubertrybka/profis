@@ -22,9 +22,13 @@ class SCAvgMeasure:
         self.encoder_path = self.config["RUN"]["model_path"]
         self.device = device("cpu")
         self.encoder = initialize_model(
-            self.encoder_path.replace("epoch_300.pt", "hyperparameters.ini")
+            self.encoder_path.replace(
+                self.encoder_path.split("/")[-1], "hyperparameters.ini"
+            )
         )
-        self.encoder.load_state_dict(torch.load(self.encoder_path, map_location=self.device))
+        self.encoder.load_state_dict(
+            torch.load(self.encoder_path, map_location=self.device)
+        )
         self.train_encoded = self.encode_fingerprints()
 
     def __call__(self, query, n=3):
@@ -48,7 +52,7 @@ class SCAvgMeasure:
 
     def read_config(self):
         config = configparser.ConfigParser()
-        config.read(self.clf_path.replace("clf.pkl", "config.ini"))
+        config.read(self.clf_path.replace(self.clf_path.split("/")[-1], "config.ini"))
         return config
 
     def encode_fingerprints(self):

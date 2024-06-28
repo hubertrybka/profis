@@ -96,7 +96,7 @@ def main(config_path, verbose=True):
             "probability": True,
             "max_iter": -1,
         }
-        with open('data/SVM_param_grid.json', 'r') as f:
+        with open("data/SVM_param_grid.json", "r") as f:
             param_grid = json.load(f)
         clf = SVC(**params)
 
@@ -124,7 +124,7 @@ def main(config_path, verbose=True):
             "max_depth": max_depth,
             "n_jobs": -1,
         }
-        with open('data/RF_param_grid.json', 'r') as f:
+        with open("data/RF_param_grid.json", "r") as f:
             param_grid = json.load(f)
         clf = RandomForestClassifier(**params)
 
@@ -140,14 +140,14 @@ def main(config_path, verbose=True):
             "seed": 42,
             "random_state": 42,
         }
-        with open('data/XGB_param_grid.json', 'r') as f:
+        with open("data/XGB_param_grid.json", "r") as f:
             param_grid = json.load(f)
         clf = XGBClassifier(**params)
 
     elif model_type == "MLP":
         fc1 = config["MLP"]["fc1"]
         fc2 = config["MLP"]["fc2"]
-        network_size = [int(n) for n in [fc1, fc2] if n != '']
+        network_size = [int(n) for n in [fc1, fc2] if n != ""]
         params = {
             "hidden_layer_sizes": network_size,
             "activation": str(config["MLP"]["activation"]),
@@ -157,7 +157,7 @@ def main(config_path, verbose=True):
             "random_state": 42,
             "max_iter": 1000,
         }
-        with open('data/MLP_param_grid.json', 'r') as f:
+        with open("data/MLP_param_grid.json", "r") as f:
             param_grid = json.load(f)
         clf = MLPClassifier(**params)
 
