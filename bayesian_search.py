@@ -4,6 +4,7 @@ import os
 import random
 import time
 import warnings
+import multiprocessing as mp
 
 import numpy as np
 import pandas as pd
@@ -21,15 +22,18 @@ def warn(*args, **kwargs):
 warnings.warn = warn
 
 
-def bayesian_search(config, scorer, sc_avg):
+def bayesian_search(job_package):
     """
     Perform Bayesian optimization on the latent space with respect to the classifier's output class probability.
     Args:
-        config (configparser.ConfigParser): config file
-        scorer (SKLearnScorer): scorer object
-        sc_avg (SCAvgMeasure): distance to model calculator
+        job_package (tuple): tuple containing the following elements:
+            n_samples (int): number of vectors to sample
+            config (configparser.ConfigParser): config file
+            scorer (SKLearnScorer): scorer object
+            sc_avg (SCAvgMeasure): distance to model calculator
     """
 
+    n_samples, config, scorer, sc_avg = job_package
     # read config file
 
     latent_size = int(config["SEARCH"]["latent_size"])
@@ -41,70 +45,30 @@ def bayesian_search(config, scorer, sc_avg):
     # define bounds
     pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
     bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.2)
+    scorer = SKLearnScorer(config["SEARCH"]["model_path"])
 
     # initialize optimizer
     optimizer = BayesianOptimization(
         f=scorer,
         pbounds=pbounds,
-        random_state=(time.time_ns() % 10 ** 6),
         verbose=verbosity > 1,
-        bounds_transformer=bounds_transformer,
+        bounds_transformer=bounds_transformer
     )
-
     vector_list = []
     score_list = []
     model_distance_list = []
 
-    # run optimization:
-    optimizer.maximize(
-        init_points=n_init,
-        n_iter=n_iter,
-    )
-    vector = np.array(list(optimizer.max["params"].values()))
-    print(f"Best score: {optimizer.max['target']}") if verbosity > 1 else None
-
-    score_list.append(float(optimizer.max["target"]))
-    model_distance_list.append(sc_avg(vector))
-    vector_list.append(vector)
-
-    # append results to return list
-
-    samples = pd.DataFrame(np.array(vector_list))
-    samples.columns = [str(n) for n in range(latent_size)]
-    samples["score"] = score_list
-    samples["score"] = samples["score"].astype(float)
-    samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
-    samples["distance_to_model"] = model_distance_list
-    return samples
-
-
-def random_search(config, scorer, sc_avg):
-    """
-    Perform random search on the latent space with respect to the classifier's output class probability.
-    Args:
-        config (configparser.ConfigParser): config file
-        scorer (SKLearnScorer): scorer object
-        sc_avg (SCAvgMeasure): distance to model calculator
-    """
-
-    # read config file
-    latent_size = int(config["SEARCH"]["latent_size"])
-    n_samples = int(config["SEARCH"]["n_samples"])
-    bounds = float(config["SEARCH"]["bounds"])
-
-    vector_list = []
-    score_list = []
-    model_distance_list = []
-
-    for i in range(n_samples):
-        vector = np.random.uniform(-bounds, bounds, latent_size)
-        score = scorer(**{str(p): vector[p] for p in range(latent_size)})
-        model_distance = sc_avg(vector)
+    # run optimization
+    for j in range(n_samples):
+        optimizer.maximize(
+            init_points=n_init,
+            n_iter=n_iter,
+        )
+        vector = np.array(list(optimizer.max["params"].values()))
+        score_list.append(float(optimizer.max["target"]))
+        model_distance_list.append(sc_avg(vector))
         vector_list.append(vector)
-        score_list.append(score)
-        model_distance_list.append(model_distance)
 
-    # append results to return list
     samples = pd.DataFrame(np.array(vector_list))
     samples.columns = [str(n) for n in range(latent_size)]
     samples["score"] = score_list
@@ -112,7 +76,6 @@ def random_search(config, scorer, sc_avg):
     samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
     samples["distance_to_model"] = model_distance_list
     return samples
-
 
 if __name__ == "__main__":
     random.seed(42)
@@ -160,17 +123,23 @@ if __name__ == "__main__":
         else None
     )
 
+    """# determine chunk sizes
+    chunk_size = n_samples // n_workers
+    remainder = n_samples % n_workers
+    chunks = [chunk_size] * n_workers
+    chunks[-1] += remainder
+
+    job_packages = [(size, config, scorer, sc_avg) for size in chunks]"""
+
+    job_package = (n_samples, config, scorer, sc_avg)
+
     print("Starting search") if verbosity > 0 else None
-    # run search
-    samples = []
-    for i in range(n_samples):
-        vector = bayesian_search(config, scorer, sc_avg)
-        # vector = random_search(config, scorer, sc_avg)
-        samples.append(vector)
-        if i % 100 == 0 or i == (n_samples - 1):
-            pd.concat(samples).to_csv(
-                f"{output_path}/{dirname}/latent_vectors.csv", index=False
-            )
+
+    results = bayesian_search(job_package)
+    with open(f"{output_path}/{dirname}/latent_vectors.csv", "w") as f:
+        results.to_csv(f, index=False)
+
+    #-------------------------------------------------------------------#
 
     # read the results
     with open(f"{output_path}/{dirname}/latent_vectors.csv", "r") as f:
