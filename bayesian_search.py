@@ -1,12 +1,9 @@
 import argparse
 import configparser
-import multiprocessing as mp
 import os
-import queue
 import random
 import time
 import warnings
-import wandb
 
 import numpy as np
 import pandas as pd
@@ -24,13 +21,12 @@ def warn(*args, **kwargs):
 warnings.warn = warn
 
 
-def search(config, return_list, scorer, sc_avg):
+def bayesian_search(config, scorer, sc_avg):
     """
     Perform Bayesian optimization on the latent space with respect to the classifier's output class probability.
     Args:
         config (configparser.ConfigParser): config file
-        return_list: list to append results to (multiprocessing)
-        scorer (SKLearnScorer): SKLearnScorer object
+        scorer (SKLearnScorer): scorer object
         sc_avg (SCAvgMeasure): distance to model calculator
     """
 
@@ -65,6 +61,7 @@ def search(config, return_list, scorer, sc_avg):
         n_iter=n_iter,
     )
     vector = np.array(list(optimizer.max["params"].values()))
+    print(f"Best score: {optimizer.max['target']}") if verbosity > 1 else None
 
     score_list.append(float(optimizer.max["target"]))
     model_distance_list.append(sc_avg(vector))
@@ -78,8 +75,43 @@ def search(config, return_list, scorer, sc_avg):
     samples["score"] = samples["score"].astype(float)
     samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
     samples["distance_to_model"] = model_distance_list
-    return_list.append(samples)
-    return
+    return samples
+
+
+def random_search(config, scorer, sc_avg):
+    """
+    Perform random search on the latent space with respect to the classifier's output class probability.
+    Args:
+        config (configparser.ConfigParser): config file
+        scorer (SKLearnScorer): scorer object
+        sc_avg (SCAvgMeasure): distance to model calculator
+    """
+
+    # read config file
+    latent_size = int(config["SEARCH"]["latent_size"])
+    n_samples = int(config["SEARCH"]["n_samples"])
+    bounds = float(config["SEARCH"]["bounds"])
+
+    vector_list = []
+    score_list = []
+    model_distance_list = []
+
+    for i in range(n_samples):
+        vector = np.random.uniform(-bounds, bounds, latent_size)
+        score = scorer(**{str(p): vector[p] for p in range(latent_size)})
+        model_distance = sc_avg(vector)
+        vector_list.append(vector)
+        score_list.append(score)
+        model_distance_list.append(model_distance)
+
+    # append results to return list
+    samples = pd.DataFrame(np.array(vector_list))
+    samples.columns = [str(n) for n in range(latent_size)]
+    samples["score"] = score_list
+    samples["score"] = samples["score"].astype(float)
+    samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
+    samples["distance_to_model"] = model_distance_list
+    return samples
 
 
 if __name__ == "__main__":
@@ -98,8 +130,6 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read(config_path)
 
-    wandb.init(project="search", config=config)
-
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
     n_samples = int(config["SEARCH"]["n_samples"])
@@ -114,11 +144,11 @@ if __name__ == "__main__":
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
-    # initialize scorer
-    scorer = SKLearnScorer(model_path)
-
     # initialize model distance calculator
     sc_avg = SCAvgMeasure(clf_path=model_path)
+
+    # initialize scorer
+    scorer = SKLearnScorer(model_path)
 
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -130,72 +160,27 @@ if __name__ == "__main__":
         else None
     )
 
-    samples = pd.DataFrame()  # placeholder
-
-    manager = mp.Manager()
-    return_list = manager.list()
-    cpu_cores = mp.cpu_count()
-    if n_workers != -1:
-        cpus = n_workers if n_workers < cpu_cores else cpu_cores
-    else:
-        cpus = cpu_cores
-
-    print(f"Bayesian search started successfully") if verbosity > 0 else None
-    print("Number of workers: ", cpus) if verbosity > 0 else None
-
-    queue = queue.Queue()
-
+    print("Starting search") if verbosity > 0 else None
+    # run search
+    samples = []
     for i in range(n_samples):
-        proc = mp.Process(target=search, args=[config, return_list, scorer, sc_avg])
-        queue.put(proc)
+        vector = bayesian_search(config, scorer, sc_avg)
+        # vector = random_search(config, scorer, sc_avg)
+        samples.append(vector)
+        if i % 100 == 0 or i == (n_samples - 1):
+            pd.concat(samples).to_csv(
+                f"{output_path}/{dirname}/latent_vectors.csv", index=False
+            )
 
-    print("(mp) Processes in queue: ", queue.qsize()) if verbosity > 0 else None
-
-    queue_initial_size = queue.qsize()
-    if queue_initial_size >= 1000:
-        period = 100
-    if queue_initial_size >= 500:
-        period = 50
-    elif queue_initial_size >= 100:
-        period = 20
-    else:
-        period = 5
-
-    # handle the queue
-
-    while True:
-        processes = []
-        if queue.empty():
-            print("(mp) Queue handled successfully") if verbosity > 0 else None
-            break
-        while len(mp.active_children()) < cpus:
-            if queue.empty():
-                break
-            proc = queue.get()
-            proc.start()
-            if queue.qsize() % period == 0:
-                (
-                    print("(mp) Processes in queue: ", queue.qsize())
-                    if verbosity > 0
-                    else None
-                )
-            processes.append(proc)
-            time.sleep(0.1)
-
-        # complete the processes
-        for proc in processes:
-            proc.join()
-
-        # save the results
-        samples = pd.concat(return_list)
-        wandb.log({"samples": len(return_list)})
-        samples.to_csv(f"{output_path}/{dirname}/latent_vectors.csv", index=False)
+    # read the results
+    with open(f"{output_path}/{dirname}/latent_vectors.csv", "r") as f:
+        samples = pd.read_csv(f)
 
     end_time = time.time()
-    time_elapsed = (end_time - start_time) / 60  # in minutes
+    time_elapsed = end_time - start_time  # in seconds
     if time_elapsed < 60:
         (
-            print("Time elapsed: ", round(time_elapsed, 2), "min")
+            print("Time elapsed: ", round(time_elapsed, 2), "s")
             if verbosity > 0
             else None
         )
@@ -204,9 +189,9 @@ if __name__ == "__main__":
             print(
                 "Time elapsed: ",
                 int(time_elapsed // 60),
-                "h",
-                round(time_elapsed % 60, 2),
                 "min",
+                round(time_elapsed % 60, 2),
+                "s",
             )
             if verbosity > 0
             else None
@@ -222,11 +207,19 @@ if __name__ == "__main__":
             f"n_iter: {n_iter}",
             f"bounds: {bounds}",
             f"verbosity: {verbosity}",
-            f"time elapsed per sample: {round(time_elapsed / n_samples, 2)} min",
-            f'mean score: {round(samples["score"].mean(), 2)}',
-            f'sigma score: {round(samples["score"].std(), 2)}',
-            f'mean norm: {round(samples["norm"].mean(), 2)}',
-            f'sigma norm: {round(samples["norm"].std(), 2)}',
+            f"time elapsed per sample: {round(time_elapsed / n_samples, 2)} s",
+            f'mean score: {round(samples["score"].mean(), 2)}'
+            if len(samples) > 0
+            else round(samples["score"].values[0], 2),
+            f'sigma score: {round(samples["score"].std(), 2)}'
+            if len(samples) > 0
+            else "",
+            f'mean norm: {round(samples["norm"].mean(), 2)}'
+            if len(samples) > 0
+            else round(samples["norm"].values[0], 2),
+            f'sigma norm: {round(samples["norm"].std(), 2)}'
+            if len(samples) > 0
+            else "",
         ]
         text = "\n".join(text)
         f.write(text)
