@@ -6,7 +6,6 @@ import queue
 import random
 import time
 import warnings
-import wandb
 
 import numpy as np
 import pandas as pd
@@ -24,18 +23,21 @@ def warn(*args, **kwargs):
 warnings.warn = warn
 
 
-def search(config, return_list, scorer, sc_avg=None):
+def search(config, return_list, scorer, sc_avg):
     """
     Perform Bayesian optimization on the latent space with respect to the classifier's output class probability.
     Args:
-        config (configparser.ConfigParser): configuration file
+        config (configparser.ConfigParser): config file
         return_list: list to append results to (multiprocessing)
-        scorer (SKLearnScorer): scorer object
-        sc_avg (SCAvgMeasure): distance do model calculator
+        scorer (SKLearnScorer): SKLearnScorer object
+        sc_avg (SCAvgMeasure): distance to model calculator
     """
 
     # read config file
 
+    config = configparser.ConfigParser(allow_no_value=True)
+    config.read(config_path)
+    model_path = config["SEARCH"]["model_path"]
     latent_size = int(config["SEARCH"]["latent_size"])
     n_init = int(config["SEARCH"]["n_init"])
     n_iter = int(config["SEARCH"]["n_iter"])
@@ -87,7 +89,6 @@ if __name__ == "__main__":
     """
     Multiprocessing support and queue handling
     """
-
     start_time = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -98,8 +99,6 @@ if __name__ == "__main__":
     # read config file
     config = configparser.ConfigParser()
     config.read(config_path)
-
-    wandb.init(project="search", config=config)
 
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
@@ -120,7 +119,6 @@ if __name__ == "__main__":
 
     # initialize model distance calculator
     sc_avg = SCAvgMeasure(clf_path=model_path)
-
 
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -148,7 +146,7 @@ if __name__ == "__main__":
     queue = queue.Queue()
 
     for i in range(n_samples):
-        proc = mp.Process(target=search, args=[config, return_list, scorer, sc_avg])
+        proc = mp.Process(target=search, args=[config, return_list, ])
         queue.put(proc)
 
     print("(mp) Processes in queue: ", queue.qsize()) if verbosity > 0 else None
@@ -190,7 +188,6 @@ if __name__ == "__main__":
 
         # save the results
         samples = pd.concat(return_list)
-        wandb.log({"samples": len(return_list)})
         samples.to_csv(f"{output_path}/{dirname}/latent_vectors.csv", index=False)
 
     end_time = time.time()
@@ -233,5 +230,4 @@ if __name__ == "__main__":
         text = "\n".join(text)
         f.write(text)
 
-    wandb.finish()
     print(f"Results saved to: {output_path}/{dirname}") if verbosity > 0 else None

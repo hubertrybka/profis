@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from torch import device
+import torch
 from profis.utils.finger import encode
 from profis.utils.modelinit import initialize_model
 import configparser
@@ -21,8 +22,9 @@ class SCAvgMeasure:
         self.encoder_path = self.config["RUN"]["model_path"]
         self.device = device("cpu")
         self.encoder = initialize_model(
-            self.encoder_path.replace("model.pt", "hyperparameters.ini")
+            self.encoder_path.replace("epoch_300.pt", "hyperparameters.ini")
         )
+        self.encoder.load_state_dict(torch.load(self.encoder_path, map_location=self.device))
         self.train_encoded = self.encode_fingerprints()
 
     def __call__(self, query, n=3):
