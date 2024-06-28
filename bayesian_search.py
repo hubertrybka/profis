@@ -6,6 +6,7 @@ import queue
 import random
 import time
 import warnings
+import wandb
 
 import numpy as np
 import pandas as pd
@@ -97,6 +98,8 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read(config_path)
 
+    wandb.init(project="search", config=config)
+
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
     n_samples = int(config["SEARCH"]["n_samples"])
@@ -177,7 +180,7 @@ if __name__ == "__main__":
                     else None
                 )
             processes.append(proc)
-            time.sleep(0.1)
+            time.sleep(1)
 
         # complete the processes
         for proc in processes:
