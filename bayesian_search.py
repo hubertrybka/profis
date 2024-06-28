@@ -77,6 +77,7 @@ def bayesian_search(job_package):
     samples["distance_to_model"] = model_distance_list
     return samples
 
+
 if __name__ == "__main__":
     random.seed(42)
     """
