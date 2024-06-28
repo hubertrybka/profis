@@ -17,5 +17,5 @@ class SKLearnScorer:
     def __call__(self, **args) -> float:
         input_vector = list({**args}.values())
         input_vector = np.array(input_vector).reshape(1, -1)
-        output = self.model.predict_proba(input_vector)[0][0]
+        output = self.model.predict_proba(input_vector)[0][1]
         return output
