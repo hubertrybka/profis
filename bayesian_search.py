@@ -180,7 +180,7 @@ if __name__ == "__main__":
                     else None
                 )
             processes.append(proc)
-            time.sleep(1)
+            time.sleep(0.1)
 
         # complete the processes
         for proc in processes:
@@ -188,6 +188,7 @@ if __name__ == "__main__":
 
         # save the results
         samples = pd.concat(return_list)
+        wandb.log({"samples": len(return_list)})
         samples.to_csv(f"{output_path}/{dirname}/latent_vectors.csv", index=False)
 
     end_time = time.time()
