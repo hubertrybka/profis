@@ -24,33 +24,23 @@ def warn(*args, **kwargs):
 warnings.warn = warn
 
 
-def search(config_path, return_list):
+def search(config, return_list, scorer, sc_avg=None):
     """
     Perform Bayesian optimization on the latent space with respect to the classifier's output class probability.
     Args:
-        config_path: path to the config file
+        config (configparser.ConfigParser): configuration file
         return_list: list to append results to (multiprocessing)
+        scorer (SKLearnScorer): scorer object
+        sc_avg (SCAvgMeasure): distance do model calculator
     """
 
     # read config file
 
-    config = configparser.ConfigParser(allow_no_value=True)
-    config.read(config_path)
-    model_path = config["SEARCH"]["model_path"]
     latent_size = int(config["SEARCH"]["latent_size"])
     n_init = int(config["SEARCH"]["n_init"])
     n_iter = int(config["SEARCH"]["n_iter"])
     bounds = float(config["SEARCH"]["bounds"])
     verbosity = int(config["SEARCH"]["verbosity"])
-
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model file not found: {model_path}")
-
-    # initialize scorer
-    scorer = SKLearnScorer(model_path)
-
-    # initialize model distance calculator
-    sc_avg = SCAvgMeasure(clf_path=model_path)
 
     # define bounds
     pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
@@ -97,6 +87,7 @@ if __name__ == "__main__":
     """
     Multiprocessing support and queue handling
     """
+
     start_time = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -120,6 +111,17 @@ if __name__ == "__main__":
     model_path = config["SEARCH"]["model_path"]
     add_timestamp = config["SEARCH"].getboolean("add_timestamp")
     output_path = config["SEARCH"]["output_dir"]
+
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+
+    # initialize scorer
+    scorer = SKLearnScorer(model_path)
+
+    # initialize model distance calculator
+    sc_avg = SCAvgMeasure(clf_path=model_path)
+
+
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     dirname = "latent_vectors_" + timestamp if add_timestamp else "latent_vectors"
@@ -146,7 +148,7 @@ if __name__ == "__main__":
     queue = queue.Queue()
 
     for i in range(n_samples):
-        proc = mp.Process(target=search, args=[config_path, return_list])
+        proc = mp.Process(target=search, args=[config, return_list, scorer, sc_avg])
         queue.put(proc)
 
     print("(mp) Processes in queue: ", queue.qsize()) if verbosity > 0 else None
