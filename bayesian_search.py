@@ -4,7 +4,7 @@ import os
 import random
 import time
 import warnings
-import multiprocessing as mp
+import wandb
 
 import numpy as np
 import pandas as pd
@@ -64,6 +64,8 @@ def bayesian_search(job_package):
             init_points=n_init,
             n_iter=n_iter,
         )
+        if j % 100 == 0:
+            wandb.log({"worker 1": j})
         vector = np.array(list(optimizer.max["params"].values()))
         score_list.append(float(optimizer.max["target"]))
         model_distance_list.append(sc_avg(vector))
@@ -93,6 +95,8 @@ if __name__ == "__main__":
     # read config file
     config = configparser.ConfigParser()
     config.read(config_path)
+
+    wandb.init(project="search", config=config)
 
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
