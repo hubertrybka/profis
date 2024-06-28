@@ -35,9 +35,6 @@ def search(config, return_list, scorer, sc_avg):
 
     # read config file
 
-    config = configparser.ConfigParser(allow_no_value=True)
-    config.read(config_path)
-    model_path = config["SEARCH"]["model_path"]
     latent_size = int(config["SEARCH"]["latent_size"])
     n_init = int(config["SEARCH"]["n_init"])
     n_iter = int(config["SEARCH"]["n_iter"])
