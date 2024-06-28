@@ -45,7 +45,9 @@ def main(config_path):
     dirname = os.path.dirname(file_path)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
-    model_config_path = model_path.replace("model.pt", "hyperparameters.ini")
+    model_config_path = model_path.replace(
+        model_path.split("/")[-1], "hyperparameters.ini"
+    )
     model_config = configparser.ConfigParser(allow_no_value=True)
     if not os.path.exists(model_config_path):
         raise ValueError(f"Model config file {model_config_path} not found")
@@ -92,7 +94,6 @@ def main(config_path):
     # save stats
     stats = pd.DataFrame()
     stats["mean_qed"] = df["qed"].mean()
-
 
     # save data as csv
     os.mkdir(f"{dirname}/preds_{timestamp}")

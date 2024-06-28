@@ -143,7 +143,7 @@ if __name__ == "__main__":
     queue = queue.Queue()
 
     for i in range(n_samples):
-        proc = mp.Process(target=search, args=[config, return_list, ])
+        proc = mp.Process(target=search, args=[config, return_list, scorer, sc_avg])
         queue.put(proc)
 
     print("(mp) Processes in queue: ", queue.qsize()) if verbosity > 0 else None

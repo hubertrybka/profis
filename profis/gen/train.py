@@ -205,7 +205,7 @@ def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
 
             if mol_list_valid:
                 # Calculate validity
-                batch_valid = len(mol_list_valid)/len(mol_list)
+                batch_valid = len(mol_list_valid) / len(mol_list)
                 mean_validity += batch_valid
 
                 # Calculate QED
