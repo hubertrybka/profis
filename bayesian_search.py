@@ -31,6 +31,7 @@ def bayesian_search(job_package):
             config (configparser.ConfigParser): configuration object
     """
 
+    # unpack job package
     n_samples, config = job_package
 
     # read config file
@@ -40,7 +41,7 @@ def bayesian_search(job_package):
     bounds = float(config["SEARCH"]["bounds"])
     verbosity = int(config["SEARCH"]["verbosity"])
 
-
+    # initialize scorer
     scorer = SKLearnScorer(config["SEARCH"]["model_path"])
 
     # define bounds
@@ -67,12 +68,30 @@ def bayesian_search(job_package):
         score_list.append(float(optimizer.max["target"]))
         vector_list.append(vector)
 
+    # create dataframe for the results
     samples = pd.DataFrame(np.array(vector_list))
     samples.columns = [str(n) for n in range(latent_size)]
     samples["score"] = score_list
     samples["score"] = samples["score"].astype(float)
     samples["norm"] = np.linalg.norm(samples.iloc[:, :-1], axis=1)
     return samples
+
+
+def distribute_jobs(n_samples, n_workers):
+    """
+    Distribute the jobs among the workers.
+    Args:
+        n_samples (int): number of samples to generate
+        n_workers (int): number of workers
+    Returns:
+        list: list of integers representing the number of samples each worker should generate
+    """
+    initial_chunk_size = n_samples // n_workers
+    remainder = n_samples % n_workers
+    chunk_sizes = [initial_chunk_size] * n_workers
+    for i in range(remainder):
+        chunk_sizes[i] += 1
+    return chunk_sizes
 
 
 if __name__ == "__main__":
@@ -115,19 +134,17 @@ if __name__ == "__main__":
         else None
     )
 
+    # determine number of workers
     if n_workers == -1 or n_workers > mp.cpu_count():
         n_workers = mp.cpu_count()
     if n_workers > n_samples:
         n_workers = n_samples
 
     # determine chunk sizes
-    chunk_size = n_samples // n_workers
-    remainder = n_samples % n_workers
-    chunks = [chunk_size] * n_workers
-    chunks[-1] += remainder
-
+    chunks = distribute_jobs(n_samples, n_workers)
     jobs = [(chunk, config) for chunk in chunks]
 
+    # run the search
     print(f"Starting search with {n_workers} workers") if verbosity > 0 else None
     with mp.Pool(n_workers) as pool:
         results = pool.map(bayesian_search, jobs)
@@ -192,4 +209,3 @@ if __name__ == "__main__":
         ]
         text = "\n".join(text)
         f.write(text)
-
