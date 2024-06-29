@@ -5,6 +5,7 @@ import random
 import time
 import warnings
 import multiprocessing as mp
+import wandb
 
 import numpy as np
 import pandas as pd
@@ -41,6 +42,10 @@ def bayesian_search(job_package):
     bounds = float(config["SEARCH"]["bounds"])
     verbosity = int(config["SEARCH"]["verbosity"])
 
+    worker_id = int(mp.current_process().name[-1])
+    if (worker_id - 1) % 50 == 0:
+        print(f"(mp debug) Worker {worker_id} started and will generate {n_samples} samples ") if verbosity > 0 else None
+
     # initialize scorer
     scorer = SKLearnScorer(config["SEARCH"]["model_path"])
 
@@ -54,6 +59,9 @@ def bayesian_search(job_package):
     # run optimization
     for j in range(n_samples):
         # initialize optimizer
+        if (worker_id - 1) % 50 == 0 and j % 10 == 0:
+            wandb.log({f"worker {worker_id}": len(vector_list)})
+            print(f"(mp debug) Worker {worker_id} finished {len(vector_list)} samples") if verbosity > 0 else None
         optimizer = BayesianOptimization(
             f=scorer,
             pbounds=pbounds,
@@ -109,6 +117,7 @@ if __name__ == "__main__":
     # read config file
     config = configparser.ConfigParser()
     config.read(config_path)
+    wandb.init(project="latent_search", config=config["SEARCH"])
 
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
