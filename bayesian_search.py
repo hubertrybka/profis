@@ -42,7 +42,7 @@ def bayesian_search(job_package):
     bounds = float(config["SEARCH"]["bounds"])
     verbosity = int(config["SEARCH"]["verbosity"])
 
-    worker_id = int(mp.current_process().name[-1])
+    worker_id = int(mp.current_process().name.split("-")[-1])
     if (worker_id - 1) % 50 == 0:
         print(f"(mp debug) Worker {worker_id} started and will generate {n_samples} samples ") if verbosity > 0 else None
 
@@ -60,7 +60,7 @@ def bayesian_search(job_package):
     for j in range(n_samples):
         # initialize optimizer
         if (worker_id - 1) % 50 == 0 and j % 10 == 0:
-            wandb.log({f"worker {worker_id}": len(vector_list)})
+            #wandb.log({f"worker {worker_id}": len(vector_list)})
             print(f"(mp debug) Worker {worker_id} finished {len(vector_list)} samples") if verbosity > 0 else None
         optimizer = BayesianOptimization(
             f=scorer,
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # read config file
     config = configparser.ConfigParser()
     config.read(config_path)
-    wandb.init(project="latent_search", config=config["SEARCH"])
+    #wandb.init(project="latent_search", config=config["SEARCH"])
 
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
