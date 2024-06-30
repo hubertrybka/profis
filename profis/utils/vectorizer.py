@@ -77,16 +77,16 @@ class Vectorizer:
     def devectorize_and_score(self, ohe, remove_special=False):
         """
         Devectorize a numpy array of shape (len(sequence), len(charset)) to a string in a stochastic manner.
-        Returns the string and the joint probability of the sequence.
+        Returns the string and token likelyhood product of the sequence.
         Args:
             ohe (numpy.ndarray): one-hot encoded sequence as numpy array
             remove_special (bool): remove special tokens
         Returns:
             sequence_str (string): string
-            score (float): log joint probability of the sequence
+            score (float): log likelihood product of the sequence
         """
         sequence_str = ""
-        probabilities = np.ones(ohe.shape[0])
+        likelihoods = np.ones(ohe.shape[0])
         for j in range(ohe.shape[0]):
             idx = np.random.choice(np.arange(len(self.alphabet)), p=ohe[j, :])
             if remove_special and (
@@ -96,8 +96,8 @@ class Vectorizer:
             ):
                 continue
             sequence_str += self.idx2char[idx]
-            probabilities[j] = ohe[j, idx]
-        return sequence_str, np.sum(np.log(probabilities))
+            likelihoods[j] = ohe[j, idx]
+        return sequence_str, np.sum(np.log(likelihoods))
 
     @staticmethod
     def split(selfie):
