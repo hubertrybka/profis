@@ -1,5 +1,4 @@
 import configparser
-
 import torch
 
 from profis.gen.generator import ProfisGRU
@@ -19,6 +18,7 @@ def initialize_model(
         model (torch.nn.Module): initialized model
     """
     config = configparser.ConfigParser()
+
     config.read(config_path)
     torch_device = device
     out_encoding = config["RUN"]["out_encoding"]

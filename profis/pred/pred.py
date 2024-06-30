@@ -274,7 +274,7 @@ def filter_dataframe(df, config):
     return df_copy
 
 
-def stochastic_decoder(vector, vectorizer, n_trials=1000):
+def stochastic_decoder(vector, vectorizer, n_trials=1000, verbose=False):
     """
     Decodes model output to sequence strings using a stochastic decoder.
     Out of n_samples generated strings that are valid, the one with the highest joint probability is returned.
@@ -282,6 +282,7 @@ def stochastic_decoder(vector, vectorizer, n_trials=1000):
         vector (np.array): Latent vector.
         vectorizer (Vectorizer): vectorizer object.
         n_trials (int): Number of samples to generate.
+        verbose (bool): Whether to print progress.
     Returns:
         str: SMILES string.
     """
@@ -296,11 +297,11 @@ def stochastic_decoder(vector, vectorizer, n_trials=1000):
     score_list = np.array(n_trials * [None])
 
     for i in range(n_trials):
-        decoded, joint_prob = vectorizer.devectorize_and_score(
+        decoded, likelihood_product = vectorizer.devectorize_and_score(
             vector, remove_special=True
         )
         seq_list[i] = decoded
-        score_list[i] = joint_prob
+        score_list[i] = likelihood_product
 
     if isinstance(vectorizer, DeepSMILESVectorizer):
         smiles_list = np.apply_along_axis(converter.decode, 0, seq_list)
