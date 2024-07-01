@@ -293,16 +293,23 @@ def stochastic_decoder(vector, vectorizer, n_trials=1000, verbose=False):
     else:
         converter = None
 
-    seq_list = np.array(n_trials * [None])
-    score_list = np.array(n_trials * [None])
+    seq_list = []
+    score_list = np.zeros(n_trials + 1)
 
-    for i in range(n_trials):
+    decoded, likelihood_product = vectorizer.devectorize_and_score(
+        vector, remove_special=True, reduction="max"
+    )
+    seq_list.append(decoded)
+    score_list[0] = likelihood_product
+
+    for i in range(1, n_trials + 1):
         decoded, likelihood_product = vectorizer.devectorize_and_score(
-            vector, remove_special=True
+            vector, remove_special=True, reduction="sample"
         )
-        seq_list[i] = decoded
+        seq_list.append(decoded)
         score_list[i] = likelihood_product
 
+    seq_list = np.array(seq_list)
     if isinstance(vectorizer, DeepSMILESVectorizer):
         smiles_list = np.apply_along_axis(converter.decode, 0, seq_list)
 
