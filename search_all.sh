@@ -7,3 +7,7 @@ python bayesian_search.py -c config_files/search_config1.ini
 python bayesian_search.py -c config_files/search_config2.ini
 python bayesian_search.py -c config_files/search_config3.ini
 python bayesian_search.py -c config_files/search_config4.ini
+python bayesian_search.py -c config_files/search_config5.ini
+python bayesian_search.py -c config_files/search_config6.ini
+python bayesian_search.py -c config_files/search_config7.ini
+python bayesian_search.py -c config_files/search_config8.ini
