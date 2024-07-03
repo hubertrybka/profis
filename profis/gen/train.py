@@ -16,7 +16,7 @@ from profis.utils.vectorizer import (
     SMILESVectorizer,
     DeepSMILESVectorizer,
 )
-
+from profis.utils.finger import encode
 
 def train(config, model, train_loader, val_loader, scoring_loader):
     """
@@ -37,6 +37,8 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     data_path = str(config["RUN"]["data_path"])
     fp_type = data_path.split("_")[-1].split(".")[0]
     out_encoding = str(config["RUN"]["out_encoding"])
+    train_size = float(config["RUN"]["train_size"])
+    val_percent = int(round(1 - train_size, 1) * 100)
 
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
 
@@ -106,7 +108,16 @@ def train(config, model, train_loader, val_loader, scoring_loader):
 
         # Update metrics df
         metrics = pd.concat([metrics, metrics_row], ignore_index=True, axis=0)
-        if epoch % 50 == 0 or epoch == 10:
+        if epoch % 50 == 0:
+            # calculate latent vectors distribution
+            val_df = pd.read_parquet(data_path.split(".")[0] + f"_val_{val_percent}.parquet")
+            mus, _ = encode(val_df, model, device)
+            means = mus.mean(axis=0)
+            stds = mus.std(axis=0)
+            bounds = pd.DataFrame({"mean": means, "std": stds}, index=range(len(means)))
+            bounds.to_csv(f"./models/{run_name}/latent_bounds_{epoch}.csv")
+
+            # save model
             save_path = f"./models/{run_name}/epoch_{epoch}.pt"
             torch.save(model.state_dict(), save_path)
 
