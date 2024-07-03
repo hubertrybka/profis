@@ -32,20 +32,29 @@ def bayesian_search(job_package):
     """
 
     # unpack job package
-    n_samples, config = job_package
+    n_samples, config, bounds_path = job_package
 
     # read config file
     latent_size = int(config["SEARCH"]["latent_size"])
     n_init = int(config["SEARCH"]["n_init"])
     n_iter = int(config["SEARCH"]["n_iter"])
-    bounds = float(config["SEARCH"]["bounds"])
     verbosity = int(config["SEARCH"]["verbosity"])
+    if bounds_path is not None:
+        bounds = pd.read_csv(bounds_path)
+        means = bounds["mean"].to_numpy()
+        stds = bounds["std"].to_numpy()
+        pbounds = {
+            str(p): (means[p] - 2 * stds[p], means[p] + 2 * stds[p])
+            for p in range(latent_size)
+        }
+    else:
+        bounds = config["SEARCH"]["bounds"]
+        pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
 
     # initialize scorer
     scorer = SKLearnScorer(config["SEARCH"]["model_path"])
 
-    # define bounds
-    pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
+    # define bounds transformer
     bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.2)
 
     vector_list = []
@@ -115,7 +124,7 @@ if __name__ == "__main__":
     n_samples = int(config["SEARCH"]["n_samples"])
     n_init = int(config["SEARCH"]["n_init"])
     n_iter = int(config["SEARCH"]["n_iter"])
-    bounds = float(config["SEARCH"]["bounds"])
+    bounds = config["SEARCH"]["bounds"]
     latent_size = int(config["SEARCH"]["latent_size"])
     model_path = config["SEARCH"]["model_path"]
     add_timestamp = config["SEARCH"].getboolean("add_timestamp")
@@ -123,6 +132,18 @@ if __name__ == "__main__":
 
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found: {model_path}")
+
+    if bounds == "auto":
+        config_VAE = configparser.ConfigParser()
+        config_VAE.read(config["SEARCH"]["model_path"].replace("clf.pkl", "config.ini"))
+        epoch = (
+            config_VAE["VAE"]["model_path"].split("/")[-1].split("_")[-1].split(".")[0]
+        )
+        bounds_path = config_VAE["VAE"]["model_path"].replace(
+            config_VAE["VAE"]["model_path"].split("/")[-1], f"latent_bounds_{epoch}.csv"
+        )
+    else:
+        bounds_path = None
 
     # create output directory
     timestamp = time.strftime("%Y%m%d_%H%M%S")

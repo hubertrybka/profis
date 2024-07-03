@@ -18,6 +18,7 @@ from profis.utils.vectorizer import (
 )
 from profis.utils.finger import encode
 
+
 def train(config, model, train_loader, val_loader, scoring_loader):
     """
     Training loop for the model consisting of a VAE encoder and GRU decoder
@@ -110,7 +111,9 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         metrics = pd.concat([metrics, metrics_row], ignore_index=True, axis=0)
         if epoch % 50 == 0:
             # calculate latent vectors distribution
-            val_df = pd.read_parquet(data_path.split(".")[0] + f"_val_{val_percent}.parquet")
+            val_df = pd.read_parquet(
+                data_path.split(".")[0] + f"_val_{val_percent}.parquet"
+            )
             mus, _ = encode(val_df, model, device)
             means = mus.mean(axis=0)
             stds = mus.std(axis=0)
