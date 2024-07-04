@@ -29,4 +29,6 @@ mus, _ = encode(val_df, model, device)
 means = mus.mean(axis=0)
 stds = mus.std(axis=0)
 bounds = pd.DataFrame({"mean": means, "std": stds}, index=range(len(means)))
-bounds.to_csv(model_path.replace('epoch_300.pt', 'latent_bounds.csv'))
+
+epoch = model_path.split("/")[-1].split("_")[1].split(".")[0]
+bounds.to_csv(model_path.replace('epoch_300.pt', f'latent_bounds_{epoch}.csv'))
