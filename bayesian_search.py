@@ -146,10 +146,10 @@ if __name__ == "__main__":
         config_VAE = configparser.ConfigParser()
         config_VAE.read(config["SEARCH"]["model_path"].replace("clf.pkl", "config.ini"))
         epoch = (
-            config_VAE["VAE"]["model_path"].split("/")[-1].split("_")[-1].split(".")[0]
+            config_VAE["RUN"]["model_path"].split("/")[-1].split("_")[-1].split(".")[0]
         )
-        bounds_path = config_VAE["VAE"]["model_path"].replace(
-            config_VAE["VAE"]["model_path"].split("/")[-1], f"latent_bounds_{epoch}.csv"
+        bounds_path = config_VAE["RUN"]["model_path"].replace(
+            config_VAE["RUN"]["model_path"].split("/")[-1], f"latent_bounds_{epoch}.csv"
         )
     else:
         bounds_path = None
@@ -172,7 +172,7 @@ if __name__ == "__main__":
 
     # determine chunk sizes
     chunks = distribute_jobs(n_samples, n_workers)
-    jobs = [(chunk, config) for chunk in chunks]
+    jobs = [(chunk, config, bounds_path) for chunk in chunks]
 
     # run the search
     print(f"Starting search with {n_workers} workers") if verbosity > 0 else None
