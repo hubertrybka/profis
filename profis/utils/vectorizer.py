@@ -1,5 +1,5 @@
 import re
-
+from scipy.special import softmax
 import numpy as np
 
 
@@ -36,22 +36,22 @@ class Vectorizer:
             X[i, self.char2idx[splited[i]]] = 1
         return X
 
-    def devectorize(self, ohe, remove_special=False, reduction="max"):
+    def devectorize(self, vector, remove_special=False, reduction="max"):
         """
         Devectorize a numpy array of shape (len(sequence), len(charset)) to a string
         Args:
-            ohe (numpy.ndarray): one-hot encoded sequence as numpy array
+            vector (numpy.ndarray): RNN output of shape (len(sequence), len(charset))
             remove_special (bool): remove special tokens
             reduction (string): reduction method, either 'max' or 'sample'
         Returns:
             sequence_str (string): string
         """
         sequence_str = ""
-        for j in range(ohe.shape[0]):
+        for j in range(vector.shape[0]):
             if reduction == "max":
-                idx = np.argmax(ohe[j, :])
+                idx = np.argmax(vector[j, :])
             elif reduction == "sample":
-                idx = np.random.choice(np.arange(len(self.alphabet)), p=ohe[j, :])
+                idx = np.random.choice(np.arange(len(self.alphabet)), p=vector[j, :])
             else:
                 raise ValueError('Reduction must be either "max" or "sample"')
             if remove_special and (
@@ -74,21 +74,25 @@ class Vectorizer:
         else:
             return "".join([self.idx2char[i] for i in idx])
 
-    def devectorize_and_score(self, ohe, remove_special=False):
+    def devectorize_and_score(self, vector, remove_special=False, reduction="max"):
         """
-        Devectorize a numpy array of shape (len(sequence), len(charset)) to a string in a stochastic manner.
-        Returns the string and token likelyhood product of the sequence.
+        Devectorize a numpy array of shape (len(sequence), len(charset)) to a string
+        Returns the string and token likelihood product of the sequence.
         Args:
-            ohe (numpy.ndarray): one-hot encoded sequence as numpy array
+            vector (numpy.ndarray): RNN output of shape (len(sequence), len(charset))
             remove_special (bool): remove special tokens
         Returns:
             sequence_str (string): string
             score (float): log likelihood product of the sequence
         """
         sequence_str = ""
-        likelihoods = np.ones(ohe.shape[0])
-        for j in range(ohe.shape[0]):
-            idx = np.random.choice(np.arange(len(self.alphabet)), p=ohe[j, :])
+        likelihoods = np.ones(vector.shape[0])
+        vector = softmax(vector, axis=-1)
+        for j in range(vector.shape[0]):
+            if reduction == "max":
+                idx = np.argmax(vector[j, :])
+            elif reduction == "sample":
+                idx = np.random.choice(np.arange(len(self.alphabet)), p=vector[j, :])
             if remove_special and (
                 self.idx2char[idx] == "[start]"
                 or self.idx2char[idx] == "[end]"
@@ -96,7 +100,7 @@ class Vectorizer:
             ):
                 continue
             sequence_str += self.idx2char[idx]
-            likelihoods[j] = ohe[j, idx]
+            likelihoods[j] = vector[j, idx]
         return sequence_str, np.sum(np.log(likelihoods))
 
     @staticmethod
