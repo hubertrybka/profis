@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # read config file
     config = configparser.ConfigParser()
     config.read(config_path)
-    wandb.init(project="latent_search", config=config["SEARCH"])
+    wandb.init(project="latent_search", config=config)
 
     n_workers = int(config["SEARCH"]["n_workers"])
     verbosity = int(config["SEARCH"]["verbosity"])
