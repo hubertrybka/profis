@@ -23,12 +23,12 @@ RDLogger.DisableLog("rdApp.*")
 
 
 def predict(
-    model,
-    latent_vectors: np.array,
-    device: torch.device = torch.device("cpu"),
-    format: str = "smiles",
-    batch_size: int = 512,
-    n_trials: int = 1000,
+        model,
+        latent_vectors: np.array,
+        device: torch.device = torch.device("cpu"),
+        format: str = "smiles",
+        batch_size: int = 512,
+        n_trials: int = 1000,
 ):
     """
     Generate molecules from latent vectors
@@ -38,6 +38,7 @@ def predict(
         device: device to use for prediction. Can be 'cpu' or 'cuda'.
         format: format of the output. Can be 'smiles', 'selfies' or 'deepsmiles'.
         batch_size: batch size for prediction.
+        n_trials: number of trials for stochastic decoding.
 
     Returns:
         pd.DataFrame: Dataframe containing smiles and scores.
@@ -68,24 +69,33 @@ def predict(
         preds_concat = np.concatenate(preds_list)
 
         if format == "smiles":
-            df["smiles"] = [
-                stochastic_decoder(vector, vectorizer, n_trials=n_trials)
-                for vector in preds_concat
-            ]
+            if n_trials:
+                df["smiles"] = [
+                    stochastic_decoder(vector, vectorizer, n_trials=n_trials)
+                    for vector in preds_concat
+                ]
+            else:
+                df["smiles"] = [
+                    simple_decoder(vector, vectorizer) for vector in preds_concat
+                ]
 
         if format == "selfies":
-            df["selfies"] = [
-                vectorizer.devectorize(pred, remove_special=True, reduction="sample")
-                for pred in preds_concat
-            ]
-            df["smiles"] = df["selfies"].apply(sf.decoder)
+                df["selfies"] = [
+                    vectorizer.devectorize(pred, remove_special=True, reduction="max")
+                    for pred in preds_concat
+                ]
+                df["smiles"] = df["selfies"].apply(sf.decoder)
 
         elif format == "deepsmiles":
-            df["smiles"] = [
-                stochastic_decoder(vector, vectorizer, n_trials=n_trials)
-                for vector in preds_concat
-            ]
-
+            if n_trials:
+                df["smiles"] = [
+                    stochastic_decoder(vector, vectorizer, n_trials=n_trials)
+                    for vector in preds_concat
+                ]
+            else:
+                df["smiles"] = [
+                    simple_decoder(vector, vectorizer) for vector in preds_concat
+                ]
         df["idx"] = range(len(df))
     return df
 
@@ -205,11 +215,11 @@ def filter_dataframe(df, config):
     if config["NUM_ROT_BONDS"]["min"]:
         df_copy = df_copy[
             df_copy["num_rotatable_bonds"] >= int(config["NUM_ROTATABLE_BONDS"]["min"])
-        ]
+            ]
     if config["NUM_ROT_BONDS"]["max"]:
         df_copy = df_copy[
             df_copy["num_rotatable_bonds"] <= int(config["NUM_ROTATABLE_BONDS"]["max"])
-        ]
+            ]
     print(f"Number of molecules after filtering by num_rotatable_bonds: {len(df_copy)}")
 
     # filter by TPSA
@@ -227,11 +237,11 @@ def filter_dataframe(df, config):
     if config["NUM_BRIDGEHEAD_ATOMS"]["min"]:
         df_copy = df_copy[
             df_copy["bridgehead_atoms"] >= int(config["NUM_BRIDGEHEAD_ATOMS"]["min"])
-        ]
+            ]
     if config["NUM_BRIDGEHEAD_ATOMS"]["max"]:
         df_copy = df_copy[
             df_copy["bridgehead_atoms"] <= int(config["NUM_BRIDGEHEAD_ATOMS"]["max"])
-        ]
+            ]
     print(f"Number of molecules after filtering by bridgehead atoms: {len(df_copy)}")
 
     # filter by spiro atoms
@@ -239,11 +249,11 @@ def filter_dataframe(df, config):
     if config["NUM_SPIRO_ATOMS"]["min"]:
         df_copy = df_copy[
             df_copy["spiro_atoms"] >= int(config["NUM_SPIRO_ATOMS"]["min"])
-        ]
+            ]
     if config["NUM_SPIRO_ATOMS"]["max"]:
         df_copy = df_copy[
             df_copy["spiro_atoms"] <= int(config["NUM_SPIRO_ATOMS"]["max"])
-        ]
+            ]
     print(f"Number of molecules after filtering by spiro atoms: {len(df_copy)}")
 
     # filter by novelty score
@@ -256,11 +266,11 @@ def filter_dataframe(df, config):
         if config["NOVELTY_SCORE"]["min"]:
             df_copy = df_copy[
                 df_copy["novelty_score"] >= int(config["NOVELTY_SCORE"]["min"])
-            ]
+                ]
         if config["NOVELTY_SCORE"]["max"]:
             df_copy = df_copy[
                 df_copy["novelty_score"] <= int(config["NOVELTY_SCORE"]["max"])
-            ]
+                ]
         print(f"Number of molecules after filtering by novelty score: {len(df_copy)}")
 
     else:
@@ -274,10 +284,40 @@ def filter_dataframe(df, config):
     return df_copy
 
 
+def simple_decoder(vector, vectorizer):
+    """
+    Decodes model output to sequence strings using a simple decoder.
+    Args:
+        vector (np.array): Latent vector.
+        vectorizer (Vectorizer): vectorizer object.
+    Returns:
+        str: SMILES string.
+    """
+    vector = softmax(vector, axis=-1)
+
+    if isinstance(vectorizer, DeepSMILESVectorizer):
+        converter = ds.Converter(rings=True, branches=True)
+    else:
+        converter = None
+
+    decoded = vectorizer.devectorize(
+        vector, remove_special=True, reduction="max"
+    )
+
+    if isinstance(vectorizer, DeepSMILESVectorizer):
+        decoded = converter.decode(decoded)
+
+    if Chem.MolFromSmiles(decoded) is not None:
+        return decoded
+    else:
+        return "invalid"
+
+
 def stochastic_decoder(vector, vectorizer, n_trials=1000, verbose=False):
     """
     Decodes model output to sequence strings using a stochastic decoder.
-    Out of n_samples generated strings that are valid, the one with the highest joint probability is returned.
+    Out of n_trials, selects only valid SMILES strings returns the sequence with the highest likelihood.
+    The first sequence is always the one with the highest likelihood.
     Args:
         vector (np.array): Latent vector.
         vectorizer (Vectorizer): vectorizer object.
