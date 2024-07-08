@@ -62,9 +62,9 @@ def main(config_path):
 
     # load data
     if file_path.endswith(".csv"):
-        query_df = pd.read_csv(file_path)[:100]
+        query_df = pd.read_csv(file_path)
     elif file_path.endswith(".parquet"):
-        query_df = pd.read_parquet(file_path)[:100]
+        query_df = pd.read_parquet(file_path)
     else:
         raise ValueError("Data file format not supported (must be .csv or .parquet)")
 
