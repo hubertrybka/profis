@@ -48,9 +48,12 @@ def bayesian_search(job_package):
             str(p): (means[p] - 2 * stds[p], means[p] + 2 * stds[p])
             for p in range(latent_size)
         }
+        pbounds_sizes = [pbounds[str(p)][1] - pbounds[str(p)][0] for p in range(latent_size)]
+        min_window = np.argmin(pbounds_sizes) * 0.1
     else:
         bounds = config["SEARCH"]["bounds"]
         pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
+        min_window = 0.1 * bounds
 
     worker_id = int(mp.current_process().name.split("-")[-1])
     if (worker_id - 1) % 50 == 0:
@@ -60,7 +63,7 @@ def bayesian_search(job_package):
     scorer = SKLearnScorer(config["SEARCH"]["model_path"])
 
     # define bounds transformer
-    bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.2)
+    bounds_transformer = SequentialDomainReductionTransformer(minimum_window=min_window)
 
     vector_list = []
     score_list = []
