@@ -47,8 +47,9 @@ def bayesian_search(job_package):
             str(p): (means[p] - 2 * stds[p], means[p] + 2 * stds[p])
             for p in range(latent_size)
         }
-        pbounds_sizes = [pbounds[str(p)][1] - pbounds[str(p)][0] for p in range(latent_size)]
-        min_window = np.argmin(pbounds_sizes) * 0.1
+        pbounds_sizes = np.array([pbounds[str(p)][1] - pbounds[str(p)][0] for p in range(latent_size)])
+        min_window = pbounds_sizes.min() * 0.1
+        print("Min window: ", min_window) if verbosity > 0 else None
     else:
         bounds = config["SEARCH"]["bounds"]
         pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
