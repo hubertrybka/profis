@@ -305,7 +305,10 @@ def simple_decoder(vector, vectorizer):
     )
 
     if isinstance(vectorizer, DeepSMILESVectorizer):
-        decoded = converter.decode(decoded)
+        try:
+            decoded = converter.decode(decoded)
+        except ds.exceptions.DecodeError:
+            decoded = 'invalid'
 
     if Chem.MolFromSmiles(decoded) is not None:
         return decoded

@@ -7,9 +7,9 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import seaborn as sns
 import configparser
+from matplotlib.lines import Line2D
 
-
-def main(model_path, samples_path):
+def main(model_path, samples_path, title=None):
 
     config = configparser.ConfigParser()
     config.read(model_path.replace(model_path.split("/")[-1], f"hyperparameters.ini"))
@@ -28,8 +28,9 @@ def main(model_path, samples_path):
     )
     vae.load_state_dict(torch.load(model_path, map_location=device))
 
-    df = pd.read_parquet(d2_path)
+    df = pd.read_parquet(d2_path).sample(5000)
     activity_column = df["activity"]
+    activity_map = ['train +' if x == 1 else 'train -' for x in activity_column]
     encoded_d2, _ = encode(df, vae, device)
 
     samples = pd.read_csv(samples_path).drop(["score", "norm"], axis=1)
@@ -42,35 +43,47 @@ def main(model_path, samples_path):
 
     samples_pca = pd.DataFrame(pca.transform(samples)).sample(1000)
 
-    activity_mapped = [
-        "train +" if activity == 1 else "train -" for activity in activity_column
-    ]
+    palette_mako = sns.color_palette("mako", 2)
+
     sns.set_style("white")
-    sns.set_context("paper")
+    sns.set_context("talk")
     sns.scatterplot(
-        data=d2_pca,
-        x=0,
-        y=1,
-        hue=activity_mapped,
-        alpha=0.6,
-        markers=".",
-        size=10,
-        palette="viridis",
-    ).set_title("PCA")
+        x=d2_pca[0],
+        y=d2_pca[1],
+        hue=activity_map,
+        alpha=1,
+        markers="o",
+        s=14,
+        palette=palette_mako,
+        hue_order=['train +', "train -"],
+        linewidth=0,
+    )
     sns.scatterplot(
-        data=samples_pca, x=0, y=1, alpha=0.6, markers=".", size=10, color="red"
+        x=samples_pca[0], y=samples_pca[1], alpha=1, markers="o", s=14, color="indianred", linewidth=0,
     )
     plt.annotate(
         text=f"mean DM: {round(distance_to_model.mean(axis=0), 3)}",
         xy=(0.05, 0.05),
         xycoords="axes fraction",
+        fontsize=12
     )
-    plt.show()
+    lgnd = plt.legend(['train +', 'train -', 'profis'], fontsize=12)
+    lgnd.legendHandles[0].update({'color': palette_mako[0], 'sizes': [40]})
+    lgnd.legendHandles[1].update({'color': palette_mako[1], 'sizes': [30]})
+    lgnd.legend_handles[2].update({'color': 'indianred', 'sizes': [30]})
 
+    if title is not None:
+        plt.title(title)
+    plt.xlabel("PCA 1")
+    plt.ylabel("PCA 2")
+    plt.xlim([-4.5, 4.5])
+    plt.ylim([-4.5, 4.5])
+    plt.savefig(f"PCA_{title}.png", bbox_inches='tight')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--model_path", type=str)
     parser.add_argument("-s", "--samples_path", type=str)
+    parser.add_argument("-t" "--plot_title", type=str, default=None)
     args = parser.parse_args()
-    main(args.model_path, args.samples_path)
+    main(args.model_path, args.samples_path, args.t__plot_title)
