@@ -86,8 +86,8 @@ def main(config_path):
         val_df = pd.read_parquet(
             data_path.split(".")[0] + f"_val_{val_percent}.parquet"
         )
-    #scoring_df = val_df.sample(frac=1, random_state=random_seed)
-    scoring_df = val_df
+    scoring_df = val_df.sample(frac=0.1, random_state=random_seed)
+    #scoring_df = val_df
 
     # prepare dataloaders
     if out_encoding == "selfies":
