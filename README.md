@@ -44,7 +44,7 @@ our method can generate a diverse set of molecules that match the FP description
 ### Download the pre-trained models:
 
 The trained models (and the dataset of D2 receptor ligands we used in our paper) are available to be downloaded from
-our [dropbox](https://www.dropbox.com/scl/fi/n5v2v8e8z63ca3i6byshk/datasets.zip?rlkey=csa1epu0mcuz2fvnevtw8jscl&dl=0) 
+our [dropbox](https://www.dropbox.com/scl/fo/z0oet8c9lfgl9wy8cey5e/APNI3cI604jPteati6Ng3SE?rlkey=tecj7pei2c31vw4xxtv64ovie&st=eouv45oa&dl=0)
 or by launching:
 
       get_data.sh
@@ -165,7 +165,7 @@ following files:
 
 This step can normally be omitted, as it is possible to use our pre-trained models. Model weights, as well as datasets
 used for training, are available
-on [dropbox](https://www.dropbox.com/scl/fi/e4xfi71gr2ih612ud8wai/models.zip?rlkey=8jrut4dexkmqj8egjcsphhdmu&dl=0) and can be
+on [dropbox](https://www.dropbox.com/scl/fo/z0oet8c9lfgl9wy8cey5e/APNI3cI604jPteati6Ng3SE?rlkey=tecj7pei2c31vw4xxtv64ovie&st=eouv45oa&dl=0) and can be
 batch downloaded using `get_data.sh`.
 
 If you intend to train the RNN, use the following command:
