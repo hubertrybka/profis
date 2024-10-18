@@ -12,11 +12,11 @@ class Vectorizer:
 
     def vectorize(self, sequence):
         """
-        Vectorize a list of strings to a numpy array of shape (len(sequence), len(charset))
+        Vectorize a sequence to a numpy array of shape (len(sequence), len(charset))
         Args:
-            sequence (string):list of strings
+            sequence (string)
         Returns:
-            X (numpy.ndarray): vectorized strings
+            X (numpy.ndarray): vectorized string
         """
         if self.pad_to_len is None:
             splited = self.split(sequence)
@@ -31,7 +31,7 @@ class Vectorizer:
         for i in range(len(splited)):
             if splited[i] not in self.alphabet:
                 raise ValueError(
-                    f"Invalid token: {splited[i]} allowed tokens: {self.alphabet}"
+                    f"Invalid token: {splited[i]}, allowed tokens: {self.alphabet}"
                 )
             X[i, self.char2idx[splited[i]]] = 1
         return X
