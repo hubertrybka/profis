@@ -11,7 +11,7 @@ def initialize_model(
     Initialize model from a given path
     Args:
         config_path (str): path to the config file
-        device (str): device to be used for training ("cuda" or "cpu")
+        device (str): device to be used for training ("cuda", "cpu" or torch.device)
         use_dropout (bool): whether to use dropout
         teacher_forcing (bool): whether to use teacher forcing
     Returns:
@@ -20,8 +20,13 @@ def initialize_model(
     config = configparser.ConfigParser()
 
     config.read(config_path)
-    assert device in ["cuda", "cpu"]
-    torch_device = torch.device(device)
+    if device in ["cuda", "cpu"]:
+        torch_device = torch.device(device)
+    elif type(device) == torch.device:
+        torch_device = device
+    else:
+        raise Exception("Invalid device passed as argument (should be 'cuda', 'cpu' or torch.device)")
+
     out_encoding = config["RUN"]["out_encoding"]
     model = ProfisGRU(
         fp_size=int(config["MODEL"]["fp_len"]),
