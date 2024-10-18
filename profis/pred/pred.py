@@ -284,7 +284,7 @@ def filter_dataframe(df, config):
     return df_copy
 
 
-def simple_decoder(vector, vectorizer):
+def simple_decoder(vector, vectorizer, return_invalid=False):
     """
     Decodes model output to sequence strings using a simple decoder.
     Args:
@@ -308,7 +308,7 @@ def simple_decoder(vector, vectorizer):
         except ds.exceptions.DecodeError:
             decoded = ""
 
-    if Chem.MolFromSmiles(decoded) is not None:
+    if Chem.MolFromSmiles(decoded) is not None or return_invalid:
         return decoded
     else:
         return "invalid"
