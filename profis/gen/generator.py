@@ -173,7 +173,7 @@ class GRUDecoder(nn.Module):
 
         # generating sequence
         outputs = []
-        for n in range(128):
+        for n in range(100):
             out, hidden = self.gru(x, hidden)
             out = self.fc2(out)  # shape (batch_size, 1, 31)
             outputs.append(out)
@@ -275,7 +275,7 @@ class LSTMDecoder(nn.Module):
 
         # generating sequence
         outputs = []
-        for n in range(128):
+        for n in range(100):
             out, hidden = self.lstm(x, hidden, cell)
             out = self.fc2(out)  # shape (batch_size, 1, 31)
             outputs.append(out)
