@@ -25,8 +25,6 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     Training loop for the model consisting of a VAE encoder and GRU decoder
     """
 
-    wandb.login(key='505ce3ad45fdf9309c3d8ec1d9764262ae6929c1')
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     epochs = int(config["RUN"]["epochs"])
