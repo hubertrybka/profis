@@ -90,19 +90,19 @@ def main(config_path):
 
     # prepare dataloaders
     if out_encoding == "selfies":
-        vectorizer = SELFIESVectorizer(pad_to_len=128)
+        vectorizer = SELFIESVectorizer(pad_to_len=100)
         train_dataset = SELFIESDataset(train_df, vectorizer, fp_len)
         val_dataset = SELFIESDataset(val_df, vectorizer, fp_len)
         scoring_dataset = SELFIESDataset(scoring_df, vectorizer, fp_len)
 
     elif out_encoding == "smiles":
-        vectorizer = SMILESVectorizer(pad_to_len=128)
+        vectorizer = SMILESVectorizer(pad_to_len=100)
         train_dataset = SMILESDataset(train_df, vectorizer, fp_len)
         val_dataset = SMILESDataset(val_df, vectorizer, fp_len)
         scoring_dataset = SMILESDataset(scoring_df, vectorizer, fp_len)
 
     elif out_encoding == "deepsmiles":
-        vectorizer = DeepSMILESVectorizer(pad_to_len=128)
+        vectorizer = DeepSMILESVectorizer(pad_to_len=100)
         train_dataset = DeepSMILESDataset(train_df, vectorizer, fp_len)
         val_dataset = DeepSMILESDataset(val_df, vectorizer, fp_len)
         scoring_dataset = DeepSMILESDataset(scoring_df, vectorizer, fp_len)
