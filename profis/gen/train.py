@@ -179,12 +179,12 @@ def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if format == "selfies":
-        vectorizer = SELFIESVectorizer(pad_to_len=128)
+        vectorizer = SELFIESVectorizer(pad_to_len=100)
     elif format == "deepsmiles":
-        vectorizer = DeepSMILESVectorizer(pad_to_len=128)
+        vectorizer = DeepSMILESVectorizer(pad_to_len=100)
         converter = ds.Converter(rings=True, branches=True)
     elif format == "smiles":
-        vectorizer = SMILESVectorizer(pad_to_len=128)
+        vectorizer = SMILESVectorizer(pad_to_len=100)
     else:
         raise ValueError("Invalid format, must be 'selfies', 'smiles' or 'deepsmiles'")
 
