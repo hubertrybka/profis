@@ -8,6 +8,7 @@ import selfies as sf
 import numpy as np
 import torch
 import deepsmiles as ds
+import wandb
 
 from profis.gen.loss import CCE
 from profis.utils.annealing import Annealer
@@ -23,6 +24,8 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     """
     Training loop for the model consisting of a VAE encoder and GRU decoder
     """
+
+    wandb.login(key='505ce3ad45fdf9309c3d8ec1d9764262ae6929c1')
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -41,6 +44,8 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     train_size = float(config["RUN"]["train_size"])
     val_percent = int(round(1 - train_size, 1) * 100)
 
+    wandb.init(project="profis", config=config, name=run_name)
+
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
 
     # Define dataframe for logging progress
@@ -51,7 +56,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
     criterion = CCE(notation=out_encoding)
 
-    print("Starting Training of GRU")
+    print("Training PROFIS")
     print(f"Device: {device}")
 
     # Start training loop
@@ -80,7 +85,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         avg_loss = epoch_loss / len(train_loader)
         val_loss = evaluate(model, val_loader, notation=out_encoding)
 
-        if epoch % 10 == 0:
+        if epoch % 50 == 0:
             start = time.time()
             mean_qed, mean_fp_recon, mean_validity = get_scores(
                 model, scoring_loader, fp_type=fp_type, format=out_encoding
@@ -104,6 +109,17 @@ def train(config, model, train_loader, val_loader, scoring_loader):
                 "mean_validity": [mean_validity],
             }
         )
+
+        wandb.log({
+            "epoch": epoch,
+            "kld_loss": kld_loss.item(),
+            "kld_weighted": kld_weighted.item(),
+            "train_loss": avg_loss,
+            "val_loss": val_loss,
+            "mean_qed": mean_qed,
+            "mean_fp_recon": mean_fp_recon,
+            "mean_validity": mean_validity,
+        })
         if kld_annealing:
             annealing_agent.step()
 
@@ -127,6 +143,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         metrics.to_csv(f"./models/{run_name}/metrics.csv", index=False)
         end_time = time.time()
         loop_time = round((end_time - start_time) / 60, 2)  # in minutes
+
         print(f"Epoch {epoch} completed in {loop_time} minutes")
 
     return None
