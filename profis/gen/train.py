@@ -84,7 +84,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             epoch_loss += loss.item()
 
         avg_loss = epoch_loss / len(train_loader)
-        val_loss = evaluate(model, val_loader, notation=out_encoding)
+        val_loss = evaluate(model, val_loader, criterion)
 
         if epoch % 10 == 0:
             start = time.time()
@@ -138,13 +138,13 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     return None
 
 
-def evaluate(model, val_loader, notation="smiles"):
+def evaluate(model, val_loader, criterion):
     """
     Evaluates the model on the validation set
     Args:
         model (nn.Module): EncoderDecoderV3 model
         val_loader (DataLoader): validation set loader
-        notation (str): output notation, can be "smiles", "selfies" or "deepsmiles"
+        criterion (nn.Module): loss function
     Returns:
         float: average loss on the validation set
 
@@ -152,7 +152,6 @@ def evaluate(model, val_loader, notation="smiles"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
     with torch.no_grad():
-        criterion = TCE(notation=notation)
         epoch_loss = 0
         for batch_idx, (X, y) in enumerate(val_loader):
             X = X.to(device)
