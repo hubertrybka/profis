@@ -39,8 +39,8 @@ class ProfisDataset(Dataset):
         raw_smile = self.smiles[idx]
         different_encoding = self.prepare_sequential_encoding(raw_smile)
         vectorized_seq = self.vectorizer.vectorize(different_encoding)
-        if len(vectorized_seq) > 128:
-            vectorized_seq = vectorized_seq[:128]
+        if len(vectorized_seq) > 100:
+            vectorized_seq = vectorized_seq[:100]
         raw_X = self.fps[idx]
         X = np.array(raw_X, dtype=int)
         X_reconstructed = self.reconstruct_fp(X)

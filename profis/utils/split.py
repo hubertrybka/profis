@@ -2,6 +2,7 @@ import random
 
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit import Chem
+import rdkit
 
 
 # scaffold split
@@ -38,7 +39,10 @@ def scaffold_split(df, frac_train, shuffle=False, seed=42):
 
     all_scaffolds = {}
     for i, smiles in enumerate(df.smiles):
-        scaffold = get_scaffold(smiles)
+        try:
+            scaffold = get_scaffold(smiles)
+        except rdkit.Chem.rdchem.AtomValenceException:
+            continue
         if scaffold not in all_scaffolds:
             all_scaffolds[scaffold] = [i]
         else:

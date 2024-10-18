@@ -2,15 +2,15 @@ import torch
 import torch.nn as nn
 
 
-class CCE(nn.Module):
+class TCE(nn.Module):
     def __init__(self, notation: str = "smiles"):
         """
-        Conscious Cross-Entropy. Calculates cross-entropy loss on two sequences,
-        ignoring indices of padding tokens.
+        Truncated Cross-Entropy. Calculates cross-entropy loss on two sequences,
+        ignoring indices that correspond to the [nop] token on the target sequence.
         Parameters:
             notation (str): format of the input strings. Must be "smiles", "selfies" or "deepsmiles".
         """
-        super(CCE, self).__init__()
+        super(TCE, self).__init__()
         if notation == "smiles":
             alphabet_path = "data/smiles_alphabet.txt"
         elif notation == "selfies":

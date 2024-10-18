@@ -44,11 +44,11 @@ def predict(
         pd.DataFrame: Dataframe containing smiles and scores.
     """
     if format == "selfies":
-        vectorizer = SELFIESVectorizer(pad_to_len=128)
+        vectorizer = SELFIESVectorizer(pad_to_len=100)
     elif format == "smiles":
-        vectorizer = SMILESVectorizer(pad_to_len=128)
+        vectorizer = SMILESVectorizer(pad_to_len=100)
     elif format == "deepsmiles":
-        vectorizer = DeepSMILESVectorizer(pad_to_len=128)
+        vectorizer = DeepSMILESVectorizer(pad_to_len=100)
     else:
         raise ValueError(
             f"Invalid format. Must be 'smiles', 'selfies' or 'deepsmiles'."

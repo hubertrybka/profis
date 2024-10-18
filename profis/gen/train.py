@@ -10,7 +10,7 @@ import torch
 import deepsmiles as ds
 import wandb
 
-from profis.gen.loss import CCE
+from profis.gen.loss import TCE
 from profis.utils.annealing import Annealer
 from profis.utils.vectorizer import (
     SELFIESVectorizer,
@@ -39,6 +39,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     annealing_max_epoch = int(config["RUN"]["annealing_max_epoch"])
     annealing_shape = str(config["RUN"]["annealing_shape"])
     data_path = str(config["RUN"]["data_path"])
+    loss = str(config["RUN"]["loss"])
     fp_type = data_path.split("_")[-1].split(".")[0]
     out_encoding = str(config["RUN"]["out_encoding"])
     train_size = float(config["RUN"]["train_size"])
@@ -54,7 +55,12 @@ def train(config, model, train_loader, val_loader, scoring_loader):
 
     # Define loss function and optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
-    criterion = CCE(notation=out_encoding)
+    if loss == "truncated_CE":
+        criterion = TCE(notation=out_encoding)
+    elif loss == "CE":
+        criterion = torch.nn.CrossEntropyLoss()
+    else:
+        raise ValueError("Invalid loss function, must be 'CE' or 'truncated_CE")
 
     print("Training PROFIS")
     print(f"Device: {device}")
@@ -163,7 +169,7 @@ def evaluate(model, val_loader, notation="smiles"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
     with torch.no_grad():
-        criterion = CCE(notation=notation)
+        criterion = TCE(notation=notation)
         epoch_loss = 0
         for batch_idx, (X, y) in enumerate(val_loader):
             X = X.to(device)
@@ -190,12 +196,12 @@ def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if format == "selfies":
-        vectorizer = SELFIESVectorizer(pad_to_len=128)
+        vectorizer = SELFIESVectorizer(pad_to_len=100)
     elif format == "deepsmiles":
-        vectorizer = DeepSMILESVectorizer(pad_to_len=128)
+        vectorizer = DeepSMILESVectorizer(pad_to_len=100)
         converter = ds.Converter(rings=True, branches=True)
     elif format == "smiles":
-        vectorizer = SMILESVectorizer(pad_to_len=128)
+        vectorizer = SMILESVectorizer(pad_to_len=100)
     else:
         raise ValueError("Invalid format, must be 'selfies', 'smiles' or 'deepsmiles'")
 
