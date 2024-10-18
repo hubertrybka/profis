@@ -3,6 +3,31 @@ import random
 import torch
 import torch.nn as nn
 
+class ConvEncoder(nn.Module):
+    """
+    Convolutional encoder class for SMILES
+    """
+
+    def __init__(self):
+        super(ConvEncoder, self).__init__()
+        self.conv_1 = nn.Conv1d(120, 9, kernel_size=9)
+        self.conv_2 = nn.Conv1d(9, 9, kernel_size=9)
+        self.conv_3 = nn.Conv1d(9, 10, kernel_size=11)
+        self.linear_1 = nn.Linear(70, 435)
+        self.linear_2 = nn.Linear(435, 32)
+        self.linear_3 = nn.Linear(435, 32)
+        self.selu = nn.SELU()
+        self.relu = nn.ReLU()
+
+def forward(self, x):
+        x = self.relu(self.conv_1(x))
+        x = self.relu(self.conv_2(x))
+        x = self.relu(self.conv_3(x))
+        x = self.selu(self.linear_1(x.view(x.size(0), -1)))
+        mu = self.relu(self.linear_2(x))
+        logvar = self.relu(self.linear_3(x))
+
+        return mu, logvar
 
 class VAEEncoder(nn.Module):
     """
