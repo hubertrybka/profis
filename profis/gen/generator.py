@@ -127,7 +127,6 @@ class GRUDecoder(nn.Module):
         input_size (int): GRU input size
         encoding_size (int): size of the latent vectors mu and logvar
         teacher_ratio (float): teacher forcing ratio
-        device (torch.device): device to run the model on
     """
 
     def __init__(
@@ -139,7 +138,6 @@ class GRUDecoder(nn.Module):
         input_size,
         encoding_size,
         teacher_ratio,
-        device,
     ):
         super(GRUDecoder, self).__init__()
 
@@ -148,7 +146,6 @@ class GRUDecoder(nn.Module):
         self.num_layers = num_layers
         self.dropout = dropout
         self.input_size = input_size
-        self.device = device
         self.teacher_ratio = teacher_ratio
         self.encoding_size = encoding_size
         self.output_size = output_size
@@ -186,14 +183,14 @@ class GRUDecoder(nn.Module):
 
         # initializing hidden state
         hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
-            self.device
+            latent_vector.device
         )
         hidden[0] = latent_transformed.unsqueeze(0)
         # shape (num_layers, batch_size, hidden_size)
 
         # initializing input (batched start token)
         x = (
-            self.start_ohe.repeat(batch_size, 1).unsqueeze(1).to(self.device)
+            self.start_ohe.repeat(batch_size, 1).unsqueeze(1).to(latent_vector.device)
         )  # shape (batch_size, 1, 42)
 
         # generating sequence
@@ -227,7 +224,6 @@ class LSTMDecoder(nn.Module):
         input_size (int): LSTM input size
         encoding_size (int): size of the latent vectors mu and logvar
         teacher_ratio (float): teacher forcing ratio
-        device (torch.device): device to run the model on
     """
 
     def __init__(
@@ -239,7 +235,6 @@ class LSTMDecoder(nn.Module):
         input_size,
         encoding_size,
         teacher_ratio,
-        device,
     ):
         super(LSTMDecoder, self).__init__()
 
@@ -248,7 +243,6 @@ class LSTMDecoder(nn.Module):
         self.num_layers = num_layers
         self.dropout = dropout
         self.input_size = input_size
-        self.device = device
         self.teacher_ratio = teacher_ratio
         self.encoding_size = encoding_size
         self.output_size = output_size
@@ -286,16 +280,16 @@ class LSTMDecoder(nn.Module):
 
         # initializing hidden state and cell state
         hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
-            self.device
+            latent_vector.device
         )
         cell = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
-            self.device
+            latent_vector.device
         )
         hidden[0] = latent_transformed.unsqueeze(0)
 
         # initializing input (batched start token)
         x = (
-            self.start_ohe.repeat(batch_size, 1).unsqueeze(1).to(self.device)
+            self.start_ohe.repeat(batch_size, 1).unsqueeze(1).to(latent_vector.device)
         )  # shape (batch_size, 1, 42)
 
         # generating sequence
@@ -331,7 +325,6 @@ class ProfisGRU(nn.Module):
         dropout (float): GRU dropout
         teacher_ratio (float): teacher forcing ratio
         random_seed (int): random seed for reproducibility
-        use_cuda (bool): whether to use cuda
         fc1_size (int): size of the first fully connected layer in the encoder
         fc2_size (int): size of the second fully connected layer in the encoder
         fc3_size (int): size of the third fully connected layer in the encoder
@@ -350,7 +343,6 @@ class ProfisGRU(nn.Module):
         dropout,
         teacher_ratio,
         random_seed=42,
-        use_cuda=True,
         fc1_size=2048,
         fc2_size=1024,
         fc3_size=512,
@@ -378,9 +370,6 @@ class ProfisGRU(nn.Module):
             input_size=output_size,
             teacher_ratio=teacher_ratio,
             encoding_size=encoding_size,
-            device=torch.device(
-                "cuda" if (use_cuda and torch.cuda.is_available()) else "cpu"
-            ),
         )
         random.seed(random_seed)
 

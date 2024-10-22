@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import deepsmiles as ds
 import wandb
+from tqdm import tqdm
 
 from profis.gen.loss import TCE
 from profis.utils.annealing import Annealer
@@ -20,12 +21,12 @@ from profis.utils.vectorizer import (
 from profis.utils.finger import encode
 
 
-def train(config, model, train_loader, val_loader, scoring_loader):
+def train(config, model, train_loader, val_loader, scoring_loader, cuda_available=False):
     """
     Training loop for the model consisting of a VAE encoder and GRU decoder
     """
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if cuda_available else "cpu")
 
     epochs = int(config["RUN"]["epochs"])
     run_name = str(config["RUN"]["run_name"])
@@ -70,7 +71,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         print(f"Epoch: {epoch}")
         epoch_loss = 0
         kld_loss = 0
-        for X, y in train_loader:
+        for X, y in tqdm(train_loader):
             X = X.to(device)
             y = y.to(device)
             optimizer.zero_grad()
