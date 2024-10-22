@@ -50,8 +50,6 @@ def main(config_path):
     cuda_available = torch.cuda.is_available() and use_cuda
     device = torch.device("cuda" if cuda_available else "cpu")
 
-    print("Using device:", device)
-
     # read dataset
 
     if not os.path.isfile(data_path):
@@ -146,10 +144,10 @@ def main(config_path):
     # Init model
 
     model = initialize_model(
-        config_path, device=device, use_dropout=True, teacher_forcing=True
-    )
+        config_path, use_dropout=True, teacher_forcing=True
+    ).to(device)
 
-    _ = train(config, model, train_loader, val_loader, scoring_loader)
+    _ = train(config, model, train_loader, val_loader, scoring_loader, cuda_available=cuda_available)
     return None
 
 
