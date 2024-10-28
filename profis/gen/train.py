@@ -89,7 +89,7 @@ def train(config, model, train_loader, val_loader, scoring_loader, cuda_availabl
         avg_loss = epoch_loss / len(train_loader)
         val_loss = evaluate(model, val_loader, criterion)
 
-        if epoch % 50 == 0:
+        if epoch % 25 == 0:
             start = time.time()
             mean_qed, mean_fp_recon, mean_validity = get_scores(
                 model, scoring_loader, fp_type=fp_type, format=out_encoding
