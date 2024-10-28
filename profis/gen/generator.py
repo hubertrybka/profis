@@ -3,32 +3,6 @@ import random
 import torch
 import torch.nn as nn
 
-class ConvEncoder(nn.Module):
-    """
-    Convolutional encoder class for SMILES
-    """
-
-    def __init__(self):
-        super(ConvEncoder, self).__init__()
-        self.conv_1 = nn.Conv1d(120, 9, kernel_size=9)
-        self.conv_2 = nn.Conv1d(9, 9, kernel_size=9)
-        self.conv_3 = nn.Conv1d(9, 10, kernel_size=11)
-        self.linear_1 = nn.Linear(70, 435)
-        self.linear_2 = nn.Linear(435, 32)
-        self.linear_3 = nn.Linear(435, 32)
-        self.selu = nn.SELU()
-        self.relu = nn.ReLU()
-
-def forward(self, x):
-        x = self.relu(self.conv_1(x))
-        x = self.relu(self.conv_2(x))
-        x = self.relu(self.conv_3(x))
-        x = self.selu(self.linear_1(x.view(x.size(0), -1)))
-        mu = self.relu(self.linear_2(x))
-        logvar = self.relu(self.linear_3(x))
-
-        return mu, logvar
-
 class VAEEncoder(nn.Module):
     """
     Encoder net, part of VAE.
@@ -124,7 +98,6 @@ class GRUDecoder(nn.Module):
         num_layers (int): GRU number of layers
         output_size (int): GRU output size (alphabet size)
         dropout (float): GRU dropout
-        input_size (int): GRU input size
         encoding_size (int): size of the latent vectors mu and logvar
         teacher_ratio (float): teacher forcing ratio
     """
@@ -135,7 +108,6 @@ class GRUDecoder(nn.Module):
         num_layers,
         output_size,
         dropout,
-        input_size,
         encoding_size,
         teacher_ratio,
     ):
@@ -145,7 +117,6 @@ class GRUDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.dropout = dropout
-        self.input_size = input_size
         self.teacher_ratio = teacher_ratio
         self.encoding_size = encoding_size
         self.output_size = output_size
@@ -156,7 +127,7 @@ class GRUDecoder(nn.Module):
 
         # pytorch.nn
         self.gru = nn.GRU(
-            input_size=self.input_size,
+            input_size=self.output_size,
             hidden_size=self.hidden_size,
             num_layers=self.num_layers,
             dropout=self.dropout if self.num_layers > 1 else 0.0,
@@ -367,11 +338,109 @@ class ProfisGRU(nn.Module):
             num_layers,
             output_size,
             dropout,
-            input_size=output_size,
             teacher_ratio=teacher_ratio,
             encoding_size=encoding_size,
         )
         random.seed(random_seed)
+
+    def forward(self, X, y, teacher_forcing=False, omit_encoder=False):
+        """
+        Args:
+            X (torch.tensor): batched fingerprint vector of size [batch_size, fp_size]
+            y (torch.tensor): batched SELFIES of target molecules
+            teacher_forcing: (bool): whether to use teacher forcing
+            omit_encoder (bool): if true, the encoder is omitted and the input is passed directly to the decoder
+
+        Returns:
+            decoded (torch.tensor): batched prediction tensor [batch_size, seq_len, alphabet_size]
+            kld_loss (torch.tensor): KL divergence loss
+        """
+        if omit_encoder:
+            encoded = X
+            kld_loss = torch.tensor(0.0)
+        else:
+            mu, logvar = self.encoder(X)
+            kld_loss = self.encoder.kld_loss(mu, logvar)
+            encoded = self.reparameterize(
+                mu, logvar
+            )  # shape (batch_size, encoding_size)
+
+        decoded = self.decoder(
+            latent_vector=encoded, y_true=y, teacher_forcing=teacher_forcing
+        )
+        # shape (batch_size, selfie_len, alphabet_len)
+
+        return decoded, kld_loss  # out_cat.shape (batch_size, selfie_len, alphabet_len)
+
+    @staticmethod
+    def reparameterize(mu, logvar):
+        """
+        Reparametrization trick for sampling from VAE latent space.
+        Args:
+            mu (torch.tensor): mean
+            logvar: (torch.tensor): log variance
+        Returns:
+            z (torch.tensor): latent vector
+        """
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps.mul(std).add_(mu)
+
+
+class ConvEncoder(nn.Module):
+    """
+    Convolutional encoder class for SMILES
+    """
+
+    def __init__(self):
+        super(ConvEncoder, self).__init__()
+        self.conv_1 = nn.Conv1d(120, 9, kernel_size=9)
+        self.conv_2 = nn.Conv1d(9, 9, kernel_size=9)
+        self.conv_3 = nn.Conv1d(9, 10, kernel_size=11)
+        self.linear_1 = nn.Linear(70, 435)
+        self.linear_2 = nn.Linear(435, 32)
+        self.linear_3 = nn.Linear(435, 32)
+        self.selu = nn.SELU()
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.relu(self.conv_1(x))
+        x = self.relu(self.conv_2(x))
+        x = self.relu(self.conv_3(x))
+        x = self.selu(self.linear_1(x.view(x.size(0), -1)))
+        mu = self.relu(self.linear_2(x))
+        logvar = self.relu(self.linear_3(x))
+
+        return mu, logvar
+
+    @staticmethod
+    def kld_loss(mu, logvar):
+        kld = torch.mean(
+            -0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0
+        )
+        return kld
+
+class SMILES2SMILES(nn.Module):
+
+    def __init__(self,
+                 encoding_size,
+                 hidden_size,
+                 num_layers,
+                 output_size,
+                 dropout,
+                 teacher_ratio,
+                 random_seed=42,
+                 ):
+        super(SMILES2SMILES, self).__init__()
+        self.encoder = ConvEncoder()
+        self.decoder = GRUDecoder(
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            output_size=output_size,
+            dropout=dropout,
+            teacher_ratio=teacher_ratio,
+            encoding_size=encoding_size
+            )
 
     def forward(self, X, y, teacher_forcing=False, omit_encoder=False):
         """
