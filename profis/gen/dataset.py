@@ -146,3 +146,19 @@ class LatentEncoderDataset(Dataset):
     def prepare_X(fps):
         fps = fps.apply(lambda x: np.array(x, dtype=int))
         return fps
+
+from profis.utils.vectorizer import SMILESVectorizer
+
+class Smiles2SmilesDataset(Dataset):
+    def __init__(self, df):
+        super().__init__()
+        self.smiles = pd.DataFrame(df["smiles"])
+        self.vectorizer = SMILESVectorizer(pad_to_len=100)
+
+    def __len__(self):
+        return len(self.smiles)
+
+    def __getitem__(self, idx):
+        smiles = self.smiles.iloc[idx].values[0]
+        X = self.vectorizer.vectorize(smiles)
+        return torch.from_numpy(X).float()
