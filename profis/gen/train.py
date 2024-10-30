@@ -89,7 +89,7 @@ def train(config, model, train_loader, val_loader, scoring_loader, cuda_availabl
         avg_loss = epoch_loss / len(train_loader)
         val_loss = evaluate(model, val_loader, criterion)
 
-        if epoch % 25 == 0:
+        if epoch % 10 == 0:
             start = time.time()
             mean_qed, mean_fp_recon, mean_validity = get_scores(
                 model, scoring_loader, fp_type=fp_type, format=out_encoding
@@ -218,7 +218,7 @@ def get_scores(model, scoring_loader, fp_type="KRFP", format="selfies"):
                 for ohe in output
             ]
 
-            example_list = seq_list[:10] if batch_idx == 0 else example_list
+            example_list = seq_list[:20] if batch_idx == 0 else example_list
 
             if format == "selfies":
                 smiles_list = [sf.decoder(x) for x in seq_list]
