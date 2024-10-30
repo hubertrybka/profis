@@ -392,14 +392,14 @@ class ConvEncoder(nn.Module):
     Convolutional encoder class for SMILES
     """
 
-    def __init__(self):
+    def __init__(self, encoding_size):
         super(ConvEncoder, self).__init__()
         self.conv_1 = nn.Conv1d(100, 9, kernel_size=9)
         self.conv_2 = nn.Conv1d(9, 9, kernel_size=9)
         self.conv_3 = nn.Conv1d(9, 10, kernel_size=11)
         self.linear_1 = nn.Linear(60, 435)
-        self.linear_2 = nn.Linear(435, 32)
-        self.linear_3 = nn.Linear(435, 32)
+        self.linear_2 = nn.Linear(435, encoding_size)
+        self.linear_3 = nn.Linear(435, encoding_size)
         self.selu = nn.SELU()
         self.relu = nn.ReLU()
 
@@ -432,7 +432,7 @@ class SMILES2SMILES(nn.Module):
                  random_seed=42,
                  ):
         super(SMILES2SMILES, self).__init__()
-        self.encoder = ConvEncoder()
+        self.encoder = ConvEncoder(encoding_size)
         self.decoder = GRUDecoder(
             hidden_size=hidden_size,
             num_layers=num_layers,
