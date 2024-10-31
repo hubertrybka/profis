@@ -1,5 +1,7 @@
 # import packages
 import os
+from ast import parse
+
 from torch.utils.data import DataLoader
 from profis.gen.dataset import Smiles2SmilesDataset
 from profis.gen.generator import SMILES2SMILES
@@ -25,12 +27,16 @@ from rdkit import RDLogger
 RDLogger.DisableLog("rdApp.*")
 
 
-def main():
+def train(learn_rate=0.0002, encoding_size=32, kld_weight=0.01, batch_size=512, run_name='smiles2smiles'):
+
+    print('learn_rate', learn_rate)
+    print('encoding_size', encoding_size)
+    print('kld_weight', kld_weight)
+    print('batch_size', batch_size)
+    print('run_name', run_name)
 
     train_size = 0.9
     random_seed = 42
-    run_name = 'smiles_to_smiles'
-    batch_size = 1024
     data_path = 'data/RNN_dataset_ECFP.parquet'
     dataloader_workers = 3
     use_cuda = True
@@ -73,7 +79,7 @@ def main():
         val_df = pd.read_parquet(
             data_path.split(".")[0] + f"_val_{val_percent}.parquet"
         )
-    scoring_df = val_df.sample(frac=0.1, random_state=random_seed)
+    scoring_df = val_df
 
     # prepare dataloaders
     train_dataset = Smiles2SmilesDataset(train_df)
@@ -115,7 +121,7 @@ def main():
     # Init model
 
     model = SMILES2SMILES(
-        encoding_size=32,
+        encoding_size=encoding_size,
         hidden_size=512,
         num_layers=2,
         output_size=get_alphabet_len('smiles'),
@@ -124,13 +130,11 @@ def main():
     ).to(device)
 
 
-    epochs = 300
-    learn_rate = 0.0008
+    epochs = 500
     kld_backward = True
     start_epoch = 1
-    kld_weight = 0.01
     kld_annealing = True
-    annealing_max_epoch = 100
+    annealing_max_epoch = 30
     annealing_shape = 'cosine'
 
     wandb.init(project="profis", name=run_name)
@@ -173,7 +177,7 @@ def main():
         avg_loss = epoch_loss / len(train_loader)
         val_loss = evaluate(model, val_loader, criterion)
 
-        if epoch % 25 == 0:
+        if epoch % 10 == 0:
             start = time.time()
             mean_qed, mean_validity = get_scores(
                 model, scoring_loader, device=device)
@@ -210,16 +214,6 @@ def main():
         # Update metrics df
         metrics = pd.concat([metrics, metrics_row], ignore_index=True, axis=0)
         if epoch % 50 == 0:
-            # calculate latent vectors distribution
-            val_df = pd.read_parquet(
-                data_path.split(".")[0] + f"_val_{val_percent}.parquet"
-            )
-            mus, _ = encode(val_df, model, device)
-            means = mus.mean(axis=0)
-            stds = mus.std(axis=0)
-            bounds = pd.DataFrame({"mean": means, "std": stds}, index=range(len(means)))
-            bounds.to_csv(f"./models/{run_name}/latent_bounds_{epoch}.csv")
-
             # save model
             save_path = f"./models/{run_name}/epoch_{epoch}.pt"
             torch.save(model.state_dict(), save_path)
@@ -322,4 +316,12 @@ def try_QED(mol):
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--batch_size", type=int, default=512, help="Batch size")
+    parser.add_argument("--lr", type=float, default=0.0002, help="Learning rate")
+    parser.add_argument("--encoding_size", type=int, default=32, help="Latent space size")
+    parser.add_argument("--run_name", type=str, default='SMILES2SMILES', help="Run name")
+    parser.add_argument("--kld_weight", type=float, default=0.1, help="KLD weight")
+    args = parser.parse_args()
+    train(learn_rate=args.lr, batch_size=args.batch_size, encoding_size=args.encoding_size)
