@@ -322,6 +322,6 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.0002, help="Learning rate")
     parser.add_argument("--encoding_size", type=int, default=32, help="Latent space size")
     parser.add_argument("--run_name", type=str, default='SMILES2SMILES', help="Run name")
-    parser.add_argument("--kld_weight", type=float, default=0.1, help="KLD weight")
+    parser.add_argument("--kld_weight", type=float, default=0.01, help="KLD weight")
     args = parser.parse_args()
     train(learn_rate=args.lr, batch_size=args.batch_size, encoding_size=args.encoding_size)
