@@ -1,7 +1,5 @@
 # import packages
 import os
-from ast import parse
-
 from torch.utils.data import DataLoader
 from profis.gen.dataset import Smiles2SmilesDataset
 from profis.gen.generator import SMILES2SMILES
