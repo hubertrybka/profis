@@ -322,4 +322,4 @@ if __name__ == "__main__":
     parser.add_argument("--run_name", type=str, default='SMILES2SMILES', help="Run name")
     parser.add_argument("--kld_weight", type=float, default=0.01, help="KLD weight")
     args = parser.parse_args()
-    train(learn_rate=args.lr, batch_size=args.batch_size, encoding_size=args.encoding_size)
+    train(learn_rate=args.lr, batch_size=args.batch_size, encoding_size=args.encoding_size, run_name=args.run_name)
