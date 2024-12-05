@@ -182,6 +182,98 @@ class GRUDecoder(nn.Module):
         out_cat = torch.cat(outputs, dim=1)
         return out_cat
 
+class GRUDecoder(nn.Module):
+    """
+    Decoder class based on GRU.
+
+    Parameters:
+        hidden_size (int): GRU hidden size
+        num_layers (int): GRU number of layers
+        output_size (int): GRU output size (alphabet size)
+        dropout (float): GRU dropout
+        encoding_size (int): size of the latent vectors mu and logvar
+        teacher_ratio (float): teacher forcing ratio
+    """
+
+    def __init__(
+        self,
+        hidden_size,
+        num_layers,
+        output_size,
+        dropout,
+        encoding_size,
+        teacher_ratio,
+    ):
+        super(GRUDecoder, self).__init__()
+
+        # GRU parameters
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.dropout = dropout
+        self.teacher_ratio = teacher_ratio
+        self.encoding_size = encoding_size
+        self.output_size = output_size
+
+        # start token initialization
+        self.start_ohe = torch.zeros(output_size, dtype=torch.float32)
+        self.start_ohe[output_size - 1] = 1.0  # start token
+
+        # pytorch.nn
+        self.gru = nn.GRU(
+            input_size=self.output_size,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            dropout=self.dropout if self.num_layers > 1 else 0.0,
+            batch_first=True,
+        )
+        self.fc1 = nn.Linear(self.encoding_size, self.hidden_size)
+        self.fc2 = nn.Linear(self.hidden_size, self.output_size)
+        self.softmax = nn.Softmax(dim=2)
+
+    def forward(self, latent_vector, y_true=None, teacher_forcing=False):
+        """
+        Args:
+            latent_vector (torch.tensor): latent vector of size [batch_size, encoding_size]
+            y_true (torch.tensor): batched OHE SMILES/SELFIES/DEEPSMILES of target molecules
+            teacher_forcing: (bool): whether to use teacher forcing (training only)
+
+        Returns:
+            out (torch.tensor): GRU output of size [batch_size, seq_len, alphabet_size]
+        """
+        batch_size = latent_vector.shape[0]
+
+        # matching GRU hidden state shape
+        latent_transformed = self.fc1(latent_vector)  # shape (batch_size, hidden_size)
+
+        # initializing hidden state
+        hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
+            latent_vector.device
+        )
+        hidden[0] = latent_transformed.unsqueeze(0)
+        # shape (num_layers, batch_size, hidden_size)
+
+        # initializing input (batched start token)
+        x = (
+            self.start_ohe.repeat(batch_size, 1).unsqueeze(1).to(latent_vector.device)
+        )  # shape (batch_size, 1, 42)
+
+        # generating sequence
+        outputs = []
+        for n in range(100):
+            out, hidden = self.gru(x, hidden)
+            out = self.fc2(out)  # shape (batch_size, 1, 31)
+            outputs.append(out)
+            out = self.softmax(out)
+            random_float = random.random()
+            if (
+                teacher_forcing
+                and random_float < self.teacher_ratio
+                and y_true is not None
+            ):
+                out = y_true[:, n, :].unsqueeze(1)  # shape (batch_size, 1, 31)
+            x = out
+        out_cat = torch.cat(outputs, dim=1)
+        return out_cat
 
 class LSTMDecoder(nn.Module):
     """
