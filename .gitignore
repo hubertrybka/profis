@@ -1,0 +1,8 @@
+data/datasets.zip
+models
+results
+wandb
+.idea
+*.pyc
+*.parquet
+*.ipynb
