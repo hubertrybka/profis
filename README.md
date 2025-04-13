@@ -95,35 +95,35 @@ This script takes the following arguments:
 --to_dense            Flag to only convert sparse fingerprints in 'fps' column to dense format
 ```
 
-### Train the SVC activity predictor:
+### Train the latent space QSAR model:
 
-In config_files/SVC_config.ini, provide the path to the preprocessed dataset file (data_path) and the path to the trained RNN model.
+In config_files/MLP_config.ini, provide the path to the preprocessed dataset file (data_path) and the path to the pre-trained RNN model weights.
 The model weights are available in the `models` directory if previously downloaded with `./get_data`. 
 The path to the RNN weights should look like this:
 
       models/SMILES_KRFP/model.pt
 
 Please provide the name of the previously created directory and the name of the model in the appropriate rubrics. 
-Other parameters can be set according to needs.
+Other parameters can be set according to needs. Config files for SVR, RF, and XGB models are also prepared for the user.
 
-Now, you can train the SVC activity predictor by running:
+Now, you can train the latent space QSAR classifier by running:
     
       python train_clf.py
 
-For more info on the SVC classifier, please refer
-to [scikit-learn SVC documentation](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html).
+For more info on the classifier, please refer
+to [scikit-learn documentation](https://scikit-learn.org/stable/api/index.html).
 
 Now a file with the trained model should be saved in 'my_results' directory. Locate the directory,
 and save the path to a model.pkl file created by the training script inside.
 
 It should look like this:
 
-      my_results/my_SVC/model.pkl
+      my_results/my_MLP/model.pkl
 
 ### Perform bayesian search on the latent space
 
-The trained SVC activity predictor can be used to perform bayesian search on the latent space in order to identify latent
-representations of potential novel ligands. Be sure to provide the path to the saved SVC model (.pkl) file and the 
+The trained QSAR classifier can be used to perform bayesian search on the latent space in order to identify the
+representations of potential novel ligands. Be sure to provide the path to the trained model pickle (.pkl) and the 
 desired number of samples (structures) to be generated in `config_files/search_config.ini`. 
 Other parameters can be set according to needs.
 
@@ -134,7 +134,7 @@ To perform bayesian search on the latent space, use the following command:
 For more info about the bayesian optimization process and the choice of non-default parameters refer to
 [bayesian-optimization README](https://github.com/bayesian-optimization/BayesianOptimization).
 
-In the directory of the saved SVC model, a new 'latent_vectors' directory will be created, containing the following 
+In the directory of trained QSAR model, a new 'latent_vectors' directory will be created, containing the following 
 files:
 
 * latent_vectors.csv - latent vectors identified by the search
@@ -151,7 +151,7 @@ To generate a library of ligands, run
 
 Other parameters and filter criteria can be set according to needs.
 
-As a result, in my_results/my_SVC, a new directory latent_vectors{timestamp} will be created. It contains the
+As a result, in my_results/my_MLP, a new directory latent_vectors{timestamp} will be created. It contains the
 following files:
 
 * predictions.csv, a file containing SMILES of the generated compounds, as well as some calculated molecular properties
