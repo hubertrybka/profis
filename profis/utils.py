@@ -22,7 +22,6 @@ def initialize_profis(config_path):
         hidden_size=int(config["MODEL"]["hidden_size"]),
         latent_size=int(config["MODEL"]["latent_size"]),
         gru_layers=int(config["MODEL"]["gru_layers"]),
-        eps_coef=float(config["MODEL"]["eps_coef"]),
         dropout=float(config["MODEL"]["dropout"]),
         alphabet_size=len(
             load_charset(f'data/{config["RUN"]["out_encoding"].lower()}_alphabet.txt')
@@ -238,6 +237,7 @@ def smiles2dense_ECFP(smiles, n_bits=2048):
 def decode_seq_from_indexes(vec, charset):
     return "".join(map(lambda x: charset[x], vec)).strip()
 
+import math
 
 class Annealer:
     """

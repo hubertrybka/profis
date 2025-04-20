@@ -30,11 +30,9 @@ class Profis(nn.Module):
             256, hidden_size, gru_layers, batch_first=True, dropout=dropout
         )
         self.fc5 = nn.Linear(hidden_size, alphabet_size)
-
         self.relu = nn.ReLU()
         self.selu = nn.SELU()
         self.softmax = nn.Softmax(dim=1)
-        self.eps_coef = eps_coef
 
     def encode(self, x):
         h1 = self.relu(self.fc1(x))
@@ -44,7 +42,7 @@ class Profis(nn.Module):
         return mu, logvar
 
     def sampling(self, z_mean, z_logvar):
-        epsilon = self.eps_coef * torch.randn_like(z_logvar)
+        epsilon = torch.randn_like(z_logvar)
         return torch.exp(0.5 * z_logvar) * epsilon + z_mean
 
     def decode(self, z):
