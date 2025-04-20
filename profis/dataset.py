@@ -5,9 +5,12 @@ import deepsmiles as ds
 import re
 import pandas as pd
 import selfies as sf
+from pathlib import Path
 
 
 def load_charset(path="data/smiles_alphabet.txt"):
+    if not Path(path).exists():
+        raise (FileNotFoundError(f"Charset file not found: {path}."))
     with open(path) as f:
         charset = f.readlines()
     charset = [char.strip() for char in charset]
