@@ -238,6 +238,7 @@ def smiles2dense_ECFP(smiles, n_bits=2048):
 def decode_seq_from_indexes(vec, charset):
     return "".join(map(lambda x: charset[x], vec)).strip()
 
+
 class Annealer:
     """
     This class is used to anneal the KL divergence loss over the course of training VAEs.

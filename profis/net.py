@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class Profis(nn.Module):
     def __init__(
         self,
@@ -69,4 +70,3 @@ class VaeLoss(nn.Module):
         xent_loss = F.binary_cross_entropy(x_hat, y, reduction="sum")
         kl_loss = -0.5 * torch.sum(1 + z_logvar - z_mean.pow(2) - z_logvar.exp())
         return xent_loss, kl_loss
-

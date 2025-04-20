@@ -59,7 +59,7 @@ def predict(
             preds_list.append(preds)
         preds_concat = np.concatenate(preds_list)
 
-        charset = load_charset(f'data/{encoding_format.lower()}_alphabet.txt')
+        charset = load_charset(f"data/{encoding_format.lower()}_alphabet.txt")
         sequences = []
         for i in range(len(preds_concat)):
             argmaxed = preds_concat[i].argmax(axis=1)
@@ -78,7 +78,7 @@ def predict(
                 try:
                     smiles_converted.append(converter.decode(deepsmiles))
                 except ds.exceptions.DecodeError:
-                    smiles_converted.append('Invalid SMILES')
+                    smiles_converted.append("Invalid SMILES")
 
         elif encoding_format == "selfies":
             print("Converting SELFIES to SMILES...")
@@ -90,7 +90,9 @@ def predict(
                 "Invalid encoding format. Can be 'smiles', 'deepsmiles' or 'selfies'."
             )
 
-        df = pd.DataFrame({"idx": range(len(smiles_converted)), "smiles": smiles_converted})
+        df = pd.DataFrame(
+            {"idx": range(len(smiles_converted)), "smiles": smiles_converted}
+        )
 
     return df
 
@@ -255,10 +257,20 @@ def filter_dataframe(df, config, verbose=False):
         if max_val != "":
             df = df[df["novelty_score"] <= float(max_val)]
         if verbose and (min_val != "" and max_val != ""):
-            print(f"Number of molecules after filtering by novelty_score: {len(df)}") if verbose else None
+            (
+                print(
+                    f"Number of molecules after filtering by novelty_score: {len(df)}"
+                )
+                if verbose
+                else None
+            )
     else:
         if verbose:
-            print("Skipping novelty filtering: clf_data_path not provided.") if verbose else None
+            (
+                print("Skipping novelty filtering: clf_data_path not provided.")
+                if verbose
+                else None
+            )
 
     # Drop redundant columns
     df_copy.drop(columns=["mols"], inplace=True)

@@ -196,9 +196,12 @@ class Smiles2SmilesDataset(Dataset):
         )
         return re.findall(pattern, smile)
 
+
 class NoisyProfisDataset(ProfisDataset):
 
-    def __init__(self, df, fp_len=2048, charset_path="data/smiles_alphabet.txt", noise=0.1):
+    def __init__(
+        self, df, fp_len=2048, charset_path="data/smiles_alphabet.txt", noise=0.1
+    ):
         super().__init__(df, fp_len, charset_path)
         self.noise = noise
 

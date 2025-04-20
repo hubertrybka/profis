@@ -14,9 +14,11 @@ from profis.utils import (
     initialize_profis,
     ValidityChecker,
     decode_seq_from_indexes,
+    Annealer,
 )
 from profis.net import VaeLoss
 from profis.dataset import ProfisDataset, DeepSmilesDataset, SelfiesDataset
+
 
 def train(
     model,
@@ -104,16 +106,17 @@ def train(
         annealer.step()
 
         wandb.log(
-            {"train_loss": train_loss,
-             "val_loss": val_loss,
-             "validity": mean_valid,
-             "kld_loss_train": mean_kld_loss,
-             "recon_loss_train": mean_recon_loss,
-             "annealed_kld_loss": annealed_kld_loss,
-             "output_smiles": wandb.Table(dataframe=output_smiles),
-             "sampling_validity": sampled_validity,
-             "sampled_seqs": wandb.Table(dataframe=sampled_seqs)
-             }
+            {
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "validity": mean_valid,
+                "kld_loss_train": mean_kld_loss,
+                "recon_loss_train": mean_recon_loss,
+                "annealed_kld_loss": annealed_kld_loss,
+                "output_smiles": wandb.Table(dataframe=output_smiles),
+                "sampling_validity": sampled_validity,
+                "sampled_seqs": wandb.Table(dataframe=sampled_seqs),
+            }
         )
         end_time = time.time()
         print(f"Epoch {epoch} completed in {(end_time - start_time)/60} min")
@@ -124,23 +127,25 @@ def train(
 
     return model
 
+
 def decode_seq_from_output(output, charset):
-    out_seq = [
-        decode_seq_from_indexes(out.argmax(axis=1), charset) for out in output
-    ]
+    out_seq = [decode_seq_from_indexes(out.argmax(axis=1), charset) for out in output]
     # Remove the [nop] tokens
     output_smiles = [seq.replace("[nop]", "") for seq in out_seq]
     return output_smiles
+
 
 def validate_seqs(seq_list, is_valid):
     valid_seqs = [seq for seq in seq_list if is_valid(seq)]
     validity = len(valid_seqs) / len(seq_list)
     return valid_seqs, validity
 
+
 if __name__ == "__main__":
 
     from rdkit import RDLogger
-    RDLogger.DisableLog('rdApp.*')
+
+    RDLogger.DisableLog("rdApp.*")
 
     # Parse the path to the config file
     argparser = argparse.ArgumentParser()

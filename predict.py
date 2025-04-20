@@ -109,11 +109,7 @@ def main(config_path):
         config.write(configfile)
     df.to_csv(f"{dirname}/{name}/predictions.csv", index=False)
 
-    (
-        print(f"Saved data to {dirname}/{name} directory")
-        if verbosity > 0
-        else None
-    )
+    (print(f"Saved data to {dirname}/{name} directory") if verbosity > 0 else None)
 
     # dump config
     with open(f"{dirname}/{name}/config.ini", "w") as configfile:
@@ -124,12 +120,14 @@ def main(config_path):
         os.mkdir(f"{dirname}/{name}/imgs")
         for n, (idx, smiles) in enumerate(zip(df["idx"], df["smiles"])):
             mol = Chem.MolFromSmiles(smiles)
-            Draw.MolToFile(
-                mol, f"{dirname}/{name}/imgs/{idx}_{n}.png", size=(300, 300)
-            )
+            Draw.MolToFile(mol, f"{dirname}/{name}/imgs/{idx}_{n}.png", size=(300, 300))
 
     time_elapsed = time.time() - start_time
-    print(f"{file_path} processed in {(time_elapsed / 60):.2f} minutes") if verbosity > 0 else None
+    (
+        print(f"{file_path} processed in {(time_elapsed / 60):.2f} minutes")
+        if verbosity > 0
+        else None
+    )
 
     return
 
