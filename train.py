@@ -3,7 +3,6 @@ import torch.utils.data
 import torch.nn as nn
 import pandas as pd
 import torch.optim as optim
-import wandb
 import configparser
 from tqdm import tqdm
 import argparse
@@ -19,6 +18,12 @@ from profis.utils import (
 from profis.net import VaeLoss
 from profis.dataset import ProfisDataset, DeepSmilesDataset, SelfiesDataset
 
+# Dataset paths
+ECFP_TRAIN_PATH = "data/RNN_dataset_ECFP_train_90.parquet"
+ECFP_VAL_PATH = "data/RNN_dataset_ECFP_val_10.parquet"
+KRFP_TRAIN_PATH = "data/RNN_dataset_KRFP_train_90.parquet"
+KRFP_VAL_PATH = "data/RNN_dataset_KRFP_val_10.parquet"
+
 
 def train(
     model,
@@ -32,6 +37,7 @@ def train(
     name="profis",
     out_encoding="smiles",
     print_progress=False,
+    checkpoint_every=50,
 ):
 
     charset = load_charset(f"data/{out_encoding}_alphabet.txt")
@@ -103,25 +109,34 @@ def train(
         output_smiles = pd.DataFrame({"smiles": output_smiles[:64]})
         sampled_seqs = pd.DataFrame({"smiles": sampled_seqs[:64]})
 
+        # KL divergence annealing step
         annealer.step()
 
-        wandb.log(
-            {
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-                "validity": mean_valid,
-                "kld_loss_train": mean_kld_loss,
-                "recon_loss_train": mean_recon_loss,
-                "annealed_kld_loss": annealed_kld_loss,
-                "output_smiles": wandb.Table(dataframe=output_smiles),
-                "sampling_validity": sampled_validity,
-                "sampled_seqs": wandb.Table(dataframe=sampled_seqs),
-            }
-        )
         end_time = time.time()
-        print(f"Epoch {epoch} completed in {(end_time - start_time)/60} min")
+        print(f"Epoch {epoch} completed in {(end_time - start_time) / 60} min")
 
-        if epoch % 50 == 0:
+        if use_wandb:
+            wandb.log(
+                {
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                    "validity": mean_valid,
+                    "kld_loss_train": mean_kld_loss,
+                    "recon_loss_train": mean_recon_loss,
+                    "annealed_kld_loss": annealed_kld_loss,
+                    "output_smiles": wandb.Table(dataframe=output_smiles),
+                    "sampling_validity": sampled_validity,
+                    "sampled_seqs": wandb.Table(dataframe=sampled_seqs),
+                }
+            )
+
+        # Log metrics to file
+        with open(f"models/{name}/metrics.csv", "a") as f:
+            f.write(
+                f"{epoch}, {train_loss}, {val_loss}, {mean_valid}, {mean_kld_loss}, {mean_recon_loss}, {annealed_kld_loss}, {sampled_validity}\n"
+            )
+
+        if epoch % checkpoint_every == 0:
             # save the model
             torch.save(model.state_dict(), f"models/{name}/epoch_{epoch}.pt")
 
@@ -145,6 +160,14 @@ if __name__ == "__main__":
 
     from rdkit import RDLogger
 
+    # Check if wandb is installed
+    try:
+        import wandb
+
+        use_wandb = True
+    except ImportError:
+        use_wandb = False
+
     RDLogger.DisableLog("rdApp.*")
 
     # Parse the path to the config file
@@ -159,20 +182,20 @@ if __name__ == "__main__":
     parser.read(args.config)
 
     # Initialize wandb
-    wandb.init(project="profis2", name=parser["RUN"]["run_name"], config=parser)
+    model_name = parser["RUN"]["run_name"]
+    if use_wandb:
+        wandb.init(project="profis", name=model_name, config=parser)
 
     # Load the data and create the dataloaders
     fp_type = parser["MODEL"]["in_encoding"]
+    if fp_type not in ["ECFP4", "KRFP"]:
+        raise ValueError(
+            f"Invalid input encoding: {fp_type}. Must be one of: ECFP4, KRFP"
+        )
     train_df = pd.read_parquet(
-        "data/RNN_dataset_ECFP_train_90.parquet"
-        if fp_type == "ECFP4"
-        else "data/RNN_dataset_KRFP_train_90.parquet"
+        ECFP_TRAIN_PATH if fp_type == "ECFP4" else KRFP_TRAIN_PATH
     )
-    test_df = pd.read_parquet(
-        "data/RNN_dataset_ECFP_val_10.parquet"
-        if fp_type == "ECFP4"
-        else "data/RNN_dataset_KRFP_val_10.parquet"
-    )
+    test_df = pd.read_parquet(ECFP_VAL_PATH if fp_type == "ECFP4" else KRFP_VAL_PATH)
 
     out_encoding = parser["RUN"]["out_encoding"]
     fp_len = int(parser["MODEL"]["fp_len"])
@@ -187,9 +210,10 @@ if __name__ == "__main__":
     elif out_encoding.lower() == "selfies":
         data_train = SelfiesDataset(train_df, fp_len=fp_len)
         data_val = SelfiesDataset(test_df, fp_len=fp_len)
-
     else:
-        raise ValueError(f"Invalid output encoding: {out_encoding}")
+        raise ValueError(
+            f"Invalid output encoding: {out_encoding}. Must be one of: smiles, deepsmiles, selfies"
+        )
 
     train_loader = torch.utils.data.DataLoader(
         data_train,
@@ -208,7 +232,6 @@ if __name__ == "__main__":
     # Create a directory to save the models to
     if os.path.exists("models") is False:
         os.makedirs("models")
-    model_name = parser["RUN"]["run_name"]
     if os.path.exists(f"models/{model_name}") is False:
         os.makedirs(f"models/{model_name}")
     elif overwrite_model_dir:
@@ -219,6 +242,12 @@ if __name__ == "__main__":
     # Dump the config file to the model directory
     with open(f"models/{model_name}/config.ini", "w") as f:
         parser.write(f)
+
+    # Initialize a file to which the metrics will be logged
+    with open(f"models/{model_name}/metrics.csv", "w") as f:
+        f.write(
+            "epoch, train_loss, val_loss, validity, kld_loss_train, recon_loss_train, annealed_kld_loss, sampling_validity\n"
+        )
 
     # Initialize the annealing agent
     annealer = Annealer(
@@ -247,6 +276,7 @@ if __name__ == "__main__":
         lr=float(parser["RUN"]["learn_rate"]),
         name=model_name,
         beta=float(parser["RUN"]["beta"]),
-        out_encoding=parser["RUN"]["out_encoding"],
+        out_encoding=out_encoding,
         print_progress=False,
+        checkpoint_every=int(parser["RUN"]["checkpoint_every"]),
     )
