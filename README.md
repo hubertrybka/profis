@@ -60,19 +60,19 @@ If you want to train the RNN models yourself, please refer to the [Advanced usag
 
 ### Prepare the dataset:
 
-In order to retrain the latent classifier, you have to provide an appropriate dataset. Put the data into
-pandas.DataFrame object. The dataframe must contain the following columns:
+In order to retrain the latent classifier, you have to provide an appropriate dataset. 
+Load your data into a pandas.DataFrame object. The dataframe must contain the following columns:
 
-* 'smiles' - SMILES strings of known ligands in canonical format.
+* 'smiles' - SMILES strings of known ligands.
 
 * 'fps' (optional) - Molecular fingerprints of the ligands. **This column is optional, as later you will be able to generate those from SMILES**.
   The fingerprints have to be saved as ordinary python lists, in dense format (a list of ints designating the indices
   of active bits in the original fingerprint).
 
-* 'activity' - Activity class (True, False). By default, we define active compounds as those having
-  Ki value <= 100nM and inactive as those of Ki > 100nM.
+* 'activity' - Activity class (True, False). By default, we define some threshold value, ex. Ki = 100 nM to discern the two activity classes.
+  This threshold can be adjusted, as it depends both on the distribution of activity values in our dataset as well as the general context of the study.
 
-Save dataframe to .parquet file in the previously created directory:
+Save the dataframe object to a .parquet file in the previously created directory:
 
 ```
 import pandas as pd
@@ -94,6 +94,7 @@ This script takes the following arguments:
 --gen_krfp            Flag to Generate KRFP fingerprints
 --to_dense            Flag to only convert sparse fingerprints in 'fps' column to dense format
 ```
+If your dataset was saved as `my_dataset.parquet`, a new file `my_dataset_processed.parquet` will be created in the same directory as a result.
 
 ### Train the latent space QSAR model:
 
@@ -113,7 +114,7 @@ Now, you can train the latent space QSAR classifier by running:
 For more info on the classifier, please refer
 to [scikit-learn documentation](https://scikit-learn.org/stable/api/index.html).
 
-Now a file with the trained model should be saved in 'my_results' directory. Locate the directory,
+Now a file with the trained model should be saved in `my_results` directory. Locate the directory,
 and save the path to a model.pkl file created by the training script inside.
 
 It should look like this:
@@ -178,10 +179,10 @@ If you intend to train the RNN, use the following command:
 
 Be sure to edit the config file in advance (config_files/RNN_config.ini) to set the desired parameters.
 In particular, you should provide a path to the RNN dataset file. This will be `data/RNN_dataset_KRFP.parquet`
-or `data/RNN_dataset_ECFP.parquet` provided you used the `get_data.sh` script. Please adjust fp_len parameter 
+or `data/RNN_dataset_ECFP.parquet` provided that you have run the `get_data.sh` script. Please adjust fp_len parameter 
 according to the length of the input fingerprint.
 
-Model weights and training progress will be saved to models/model_name catalog.
+Model weights and training progress will be saved to models/model_name directory.
 
 ## Dependencies
 
