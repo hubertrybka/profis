@@ -15,9 +15,8 @@ from profis.utils import (
     ValidityChecker,
     decode_seq_from_indexes,
 )
-from profis.net import VaeLoss, Annealer
+from profis.net import VaeLoss
 from profis.dataset import ProfisDataset, DeepSmilesDataset, SelfiesDataset
-
 
 def train(
     model,
