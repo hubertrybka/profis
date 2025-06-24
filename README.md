@@ -12,6 +12,7 @@ Hubert Rybka, Tomasz Danel, Sabina Podlewska
    * [Basic usage](#basic-usage)
    * [Advanced usage](#advanced-usage)
    * [Dependencies](#dependencies)
+   * [How to cite](#how-to-cite)
 
 
 ## General info
@@ -199,3 +200,20 @@ Model weights and training progress will be saved to models/model_name directory
 * xgboost 2.0.3
 * unzip 6.0 (automates the downloading of datasets and weights)
 
+## How to cite
+
+**The code, as well as the trained model weights, are provided under the MIT license.**  
+If you use this code or the model in your research, please cite our original paper:
+
+```
+@article{rybka2025profis,
+  title={PROFIS: design of target-focused libraries by probing continuous fingerprint space with recurrent neural networks},
+  author={Rybka, Hubert and Danel, Tomasz and Podlewska, Sabina},
+  journal={Journal of Chemical Information and Modeling},
+  volume={65},
+  number={9},
+  pages={4412--4425},
+  year={2025},
+  publisher={ACS Publications}
+}
+```
